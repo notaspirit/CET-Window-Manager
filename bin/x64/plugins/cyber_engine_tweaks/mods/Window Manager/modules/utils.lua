@@ -44,15 +44,16 @@ local function adjustWindowName(displayName)
 end
 
 ---@param windowTable table
-local function longestStringLenghtPx(windowTable)
+local function longestStringLengthPx(windowTable)
     local maxLength = 0
     for name, state in pairs(windowTable) do
-        local instanceLength = ImGui.CalcTextSize(name)
+        local displayName = name:match("([^#]+)")
+        local instanceLength = ImGui.CalcTextSize(displayName)
         if instanceLength > maxLength then
             maxLength = instanceLength
         end
     end
-    return maxLength
+    return maxLength + 10
 end
 
 local utils = {
@@ -60,7 +61,7 @@ local utils = {
     isInTable = isInTable,
     tableLength = tableLength,
     adjustWindowName = adjustWindowName,
-    longestStringLenghtPX = longestStringLenghtPx
+    longestStringLenghtPX = longestStringLengthPx
 }
 
 return utils

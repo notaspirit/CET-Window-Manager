@@ -8,7 +8,7 @@ CETWM = {
     windows = {}, -- Store window states: {name = {visible = bool, lastPos = {x,y}, isCollapsed = bool}}
     -- this table now acts are the "working" or temp dir that then gets merged into the settingService and saved
     overlayOpen = false,
-    minWidth = 100
+    minWidth = 0
 }
 
 local settingsInst = settings:getInstance()
@@ -34,6 +34,47 @@ end)
 registerForEvent("onOverlayClose", function()
     CETWM.overlayOpen = false
 end)
+
+---@param name string
+---@param metadata table
+local function hideWindow(name, metadata)
+    local x, y
+    local isCollapsed = false
+    if ImGui.Begin(name, true) then
+        isCollapsed = ImGui.IsWindowCollapsed()
+        x, y = ImGui.GetWindowPos()
+        ImGui.SetWindowPos(10000, 10000)
+    end
+    print("Got Current Pos: X: %d, Y: %d", x, y)
+    CETWM.windows[name].lastPos = {x,y}
+    CETWM.windows[name].isCollapsed = isCollapsed
+    settingsInst.update(CETWM.windows)
+end
+
+---@param name string
+---@param metadata table
+local function showWindow(name, metadata)
+    print("Finished loading lastPos:", metadata.lastPos[1], metadata.lastPos[2])
+    if ImGui.Begin(name, true) then
+        ImGui.SetWindowPos(metadata.lastPos[1], metadata.lastPos[2])
+    end
+    if CETWM.windows[name].isCollasped then
+        if ImGui.Begin(name, false) then
+            local s = 1
+        end
+    end
+
+end
+
+---@param name string
+---@param metadata table
+local function resetWindow(name, metadata)
+    CETWM.windows[name].lastPos = {200,200}
+    CETWM.windows[name].isCollapsed = false
+    CETWM.windows[name].visible = true
+    settingsInst.update(CETWM.windows)
+    showWindow(name, metadata)
+end
 
 local function addWindowTab()
     if ImGui.Button("Add Window") then
@@ -71,48 +112,27 @@ local function addWindowTab()
             settingsInst.update(CETWM.windows)
         end
         ImGui.SameLine()
+        if ImGui.Button("Reset##" .. name) then
+            resetWindow(name, state)
+        end
+        ImGui.SameLine()
         ImGui.Text(name)
     end
 end
 
----@param name string
----@param metadata table
-local function hideWindow(name, metadata)
-    local x, y
-    local isCollapsed = false
-    if ImGui.Begin(name, true) then
-        isCollapsed = ImGui.IsWindowCollapsed()
-        x, y = ImGui.GetWindowPos()
-        ImGui.SetWindowPos(10000, 10000)
-    end
-    print("Got Current Pos: X: %d, Y: %d", x, y)
-    CETWM.windows[name].lastPos = {x,y}
-    CETWM.windows[name].isCollapsed = isCollapsed
-    settingsInst.update(CETWM.windows)
-end
-
----@param name string
----@param metadata table
-local function showWindow(name, metadata)
-    print("Finished loading lastPos:", metadata.lastPos[1], metadata.lastPos[2])
-    if ImGui.Begin(name, true) then
-        ImGui.SetWindowPos(metadata.lastPos[1], metadata.lastPos[2])
-    end
-    if CETWM.windows[name].isCollasped then
-        if ImGui.Begin(name, false) then
-            local s = 1
-        end
-    end
-
-end
-
 local function manageWindowsTab()
+    CETWM.minWidth = utils.longestStringLenghtPX(CETWM.windows)
+
+    -- colors for when the window is visible
+    r = 0.22
+    g = 0.48
+    b = 0.8
     for name, state in pairs(CETWM.windows) do
         if state.visible then
             -- Light color when enabled (you can adjust these RGB values)
-            ImGui.PushStyleColor(ImGuiCol.Button, 0.4, 0.4, 0.4, 1.0)
-            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0.5, 0.5, 0.5, 1.0)
-            ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0.6, 0.6, 0.6, 1.0)
+            ImGui.PushStyleColor(ImGuiCol.Button, r, g, b, 1.0)
+            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, r*1.2, g*1.2, b*1.2, 1.0)
+            ImGui.PushStyleColor(ImGuiCol.ButtonActive, r*0.8, g*0.8, b*0.8, 1.0)
         else
             -- Dark color when disabled
             ImGui.PushStyleColor(ImGuiCol.Button, 0.2, 0.2, 0.2, 1.0)
@@ -120,16 +140,15 @@ local function manageWindowsTab()
             ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0.4, 0.4, 0.4, 1.0)
         end
         
-        ImGui.PushItemWidth(CETWM.minWidth)
-        if ImGui.Button(name) then
+        if ImGui.Button(name, CETWM.minWidth, 0) then
             state.visible = not state.visible  -- Toggle visibility
+            settingsInst.update(CETWM.windows)
             if not state.visible then
                 hideWindow(name, state)
             else 
                 showWindow(name, state)
             end
         end
-        
         ImGui.PopStyleColor(3)  -- Pop all 3 style colors we pushed
     end
 end
@@ -137,7 +156,7 @@ end
 -- onDraw event to render ImGui windows
 registerForEvent("onDraw", function()
     if not CETWM.overlayOpen then return end
-    if ImGui.Begin("Window Manager", true, ImGuiWindowFlags.None) then
+    if ImGui.Begin("Window Manager", true, ImGuiWindowFlags.NoScrollbar) then
         if ImGui.BeginTabBar("TabList1") then
             if ImGui.BeginTabItem("Toggle") then
                 manageWindowsTab()
