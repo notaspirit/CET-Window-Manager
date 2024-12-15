@@ -146,7 +146,7 @@ end
 -- onDraw event to render ImGui windows
 registerForEvent("onDraw", function()
     if not CETWM.overlayOpen then return end
-    if ImGui.Begin("Window Manager", true, ImGuiWindowFlags.NoScrollbar) then
+    if ImGui.Begin("Window Manager", true, ImGuiWindowFlags.AlwaysAutoResize) then
         if ImGui.BeginTabBar("TabList1") then
             if ImGui.BeginTabItem("Toggle") then
                 manageWindowsTab()
