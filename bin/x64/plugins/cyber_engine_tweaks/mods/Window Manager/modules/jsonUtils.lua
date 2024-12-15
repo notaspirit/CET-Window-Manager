@@ -175,7 +175,6 @@ local function loadSettings()
         print("Failed to parse settings file")
         return nil
     end
-    print("Settings file parsed successfully")
     return settingsTable
 end
 

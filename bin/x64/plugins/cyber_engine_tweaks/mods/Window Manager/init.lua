@@ -1,4 +1,3 @@
-
 local utils = require('modules/utils')
 local settings = require('modules/jsonUtils')
 
@@ -15,16 +14,12 @@ local settingsInst = settings:getInstance()
 local windowName = ""
 local popUpBannedText = ""
 
--- print on load
-print('My Mod is loaded!')
 
 -- onInit event
 registerForEvent('onInit', function() 
     -- set as ready
     CETWM.ready = true
     CETWM.windows = settingsInst.windows
-    -- print on initialize
-    print('My Mod is initialized!')
 end)
 
 registerForEvent("onOverlayOpen", function()
@@ -45,7 +40,6 @@ local function hideWindow(name, metadata)
         x, y = ImGui.GetWindowPos()
         ImGui.SetWindowPos(10000, 10000)
     end
-    print("Got Current Pos: X: %d, Y: %d", x, y)
     CETWM.windows[name].lastPos = {x,y}
     CETWM.windows[name].isCollapsed = isCollapsed
     settingsInst.update(CETWM.windows)
@@ -54,7 +48,6 @@ end
 ---@param name string
 ---@param metadata table
 local function showWindow(name, metadata)
-    print("Finished loading lastPos:", metadata.lastPos[1], metadata.lastPos[2])
     if ImGui.Begin(name, true) then
         ImGui.SetWindowPos(metadata.lastPos[1], metadata.lastPos[2])
     end
@@ -70,10 +63,10 @@ end
 ---@param metadata table
 local function resetWindow(name, metadata)
     CETWM.windows[name].lastPos = {200,200}
-    CETWM.windows[name].isCollapsed = false
+    CETWM.windows[name].isCollasped = false
     CETWM.windows[name].visible = true
     settingsInst.update(CETWM.windows)
-    showWindow(name, metadata)
+    showWindow(name, CETWM.windows[name])
 end
 
 local function addWindowTab()
@@ -83,19 +76,14 @@ local function addWindowTab()
     if ImGui.BeginPopup("Add Window") then
         windowName, text_input_active = ImGui.InputText("Window Name", windowName, 100)
         if ImGui.Button("Add") then
-            print("Add Button Pressed")
-            print("Input is " .. windowName)
             if not utils.isBanned(windowName) then
-                print("Input is Valid!")
                 CETWM.windows[utils.adjustWindowName(windowName)] = {visible = true, lastPos = {x = 100, y = 100}, isCollapsed = false}
                 settingsInst.update(CETWM.windows)
                 popUpBannedText = ""
                 windowName = ""
                 ImGui.CloseCurrentPopup()
             else
-                print("Input is not valid!")
                 popUpBannedText = string.format("%s is not an allowed Window Name!", windowName)
-                print(popUpBannedText)
                 end
         end
         ImGui.SameLine()
@@ -106,18 +94,20 @@ local function addWindowTab()
         ImGui.Text(popUpBannedText)
         ImGui.EndPopup()
     end
+    ImGui.TextWrapped("Add Windows here by their display name. Disregard icons if they have any.")
+    ImGui.TextWrapped("If the window doesn't get affected despite being properly spelled (it's case sensitive), report it so it can be fixed.")
     for name, state in pairs(CETWM.windows) do
-        if ImGui.Button("Remove##" .. name) then
+        if ImGui.Button(IconGlyphs.Close .. "##" .. name) then
             CETWM.windows[name] = nil
             settingsInst.update(CETWM.windows)
         end
         ImGui.SameLine()
-        if ImGui.Button("Reset##" .. name) then
+        if ImGui.Button(IconGlyphs.Cached .. "##" .. name) then
             resetWindow(name, state)
         end
         ImGui.SameLine()
         ImGui.Text(name)
-    end
+    end 
 end
 
 local function manageWindowsTab()

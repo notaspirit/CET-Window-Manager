@@ -6,7 +6,8 @@ local window_blacklist = {
 local window_name_lookup = {
     ["World Inspector"] = "World Inspector##RHT:WorldTools",
     ["Ink Inspector"] = "Ink Inspector##RHT:InkTools:MainWindow",
-    ["Hot Reload"] = "Hot Reload##RHT:HotReload"
+    ["Hot Reload"] = "Hot Reload##RHT:HotReload",
+    ["Simple Utils"] = IconGlyphs.Cog .. " Simple Utils"
 }
 
 ---@param table table
@@ -23,7 +24,6 @@ end
 ---@param input string 
 local function isBanned(input)
     if isInTable(window_blacklist, input) then
-        print('Input is in the banned list!')
         return true
     end
     return false
