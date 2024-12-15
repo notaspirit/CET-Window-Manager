@@ -56,12 +56,25 @@ local function longestStringLengthPx(windowTable)
     return maxLength + 10
 end
 
+---@param tableInput table
+local function sortTable(tableInput)
+    -- Create a temporary table to sort windows by index
+    local sortedWindows = {}
+    for name, state in pairs(tableInput) do
+        table.insert(sortedWindows, {name = name, state = state})
+    end
+    -- Sort the windows based on the index
+    table.sort(sortedWindows, function(a, b) return a.state.index < b.state.index end)
+    return sortedWindows
+end
+
 local utils = {
     isBanned = isBanned,
     isInTable = isInTable,
     tableLength = tableLength,
     adjustWindowName = adjustWindowName,
-    longestStringLenghtPX = longestStringLengthPx
+    longestStringLenghtPX = longestStringLengthPx,
+    sortTable = sortTable
 }
 
 return utils

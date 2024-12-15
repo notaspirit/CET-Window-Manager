@@ -4,7 +4,7 @@ local settings = require('modules/jsonUtils')
 -- mod info
 CETWM = {
     ready = false,
-    windows = {}, -- Store window states: {name = {visible = bool, lastPos = {x,y}, isCollapsed = bool}}
+    windows = {}, -- Store window states: {name = {visible = bool, lastPos = {x,y}, isCollapsed = bool, index = int}}
     -- this table now acts are the "working" or temp dir that then gets merged into the settingService and saved
     overlayOpen = false,
     minWidth = 0
@@ -77,7 +77,9 @@ local function addWindowTab()
         windowName, text_input_active = ImGui.InputText("Window Name", windowName, 100)
         if ImGui.Button("Add") then
             if not utils.isBanned(windowName) then
-                CETWM.windows[utils.adjustWindowName(windowName)] = {visible = true, lastPos = {x = 100, y = 100}, isCollapsed = false}
+                local newIndex = utils.tableLength(CETWM.windows) + 1
+                print(newIndex)
+                CETWM.windows[utils.adjustWindowName(windowName)] = {visible = true, lastPos = {x = 100, y = 100}, isCollapsed = false, index = newIndex}
                 settingsInst.update(CETWM.windows)
                 popUpBannedText = ""
                 windowName = ""
@@ -96,7 +98,12 @@ local function addWindowTab()
     end
     ImGui.TextWrapped("Add Windows here by their display name. Disregard icons if they have any.")
     ImGui.TextWrapped("If the window doesn't get affected despite being properly spelled (it's case sensitive), report it so it can be fixed.")
-    for name, state in pairs(CETWM.windows) do
+        
+    local sortedWindows = utils.sortTable(CETWM.windows)
+
+    for _, window in ipairs(sortedWindows) do
+        local name = window.name
+        local state = window.state
         if ImGui.Button(IconGlyphs.Close .. "##" .. name) then
             CETWM.windows[name] = nil
             settingsInst.update(CETWM.windows)
@@ -114,10 +121,15 @@ local function manageWindowsTab()
     CETWM.minWidth = utils.longestStringLenghtPX(CETWM.windows)
 
     -- colors for when the window is visible
-    r = 0.22
-    g = 0.48
-    b = 0.8
-    for name, state in pairs(CETWM.windows) do
+    local r = 0.22
+    local g = 0.48
+    local b = 0.8
+    
+    local sortedWindows = utils.sortTable(CETWM.windows)
+
+    for _, window in ipairs(sortedWindows) do
+        local name = window.name
+        local state = window.state
         if state.visible then
             -- Light color when enabled (you can adjust these RGB values)
             ImGui.PushStyleColor(ImGuiCol.Button, r, g, b, 1.0)
