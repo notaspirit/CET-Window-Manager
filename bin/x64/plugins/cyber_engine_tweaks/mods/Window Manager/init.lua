@@ -1,15 +1,17 @@
-local utils = require("modules/utils")
-local settingsService = require("modules/settings")
+
+local utils = require('modules/utils')
+local settings = require('modules/jsonUtils')
 
 -- mod info
 CETWM = {
     ready = false,
     windows = {}, -- Store window states: {name = {visible = bool, lastPos = {x,y}, isCollapsed = bool}}
+    -- this table now acts are the "working" or temp dir that then gets merged into the settingService and saved
     overlayOpen = false,
     minWidth = 100
 }
 
-local settingsInst = settingsService.getInstance()
+local settingsInst = settings:getInstance()
 local windowName = ""
 local popUpBannedText = ""
 
@@ -20,6 +22,7 @@ print('My Mod is loaded!')
 registerForEvent('onInit', function() 
     -- set as ready
     CETWM.ready = true
+    CETWM.windows = settingsInst.windows
     -- print on initialize
     print('My Mod is initialized!')
 end)
@@ -44,6 +47,7 @@ local function addWindowTab()
             if not utils.isBanned(windowName) then
                 print("Input is Valid!")
                 CETWM.windows[utils.adjustWindowName(windowName)] = {visible = true, lastPos = {x = 100, y = 100}, isCollapsed = false}
+                settingsInst.update(CETWM.windows)
                 popUpBannedText = ""
                 windowName = ""
                 ImGui.CloseCurrentPopup()
@@ -64,6 +68,7 @@ local function addWindowTab()
     for name, state in pairs(CETWM.windows) do
         if ImGui.Button("Remove##" .. name) then
             CETWM.windows[name] = nil
+            settingsInst.update(CETWM.windows)
         end
         ImGui.SameLine()
         ImGui.Text(name)
@@ -83,6 +88,7 @@ local function hideWindow(name, metadata)
     print("Got Current Pos: X: %d, Y: %d", x, y)
     CETWM.windows[name].lastPos = {x,y}
     CETWM.windows[name].isCollapsed = isCollapsed
+    settingsInst.update(CETWM.windows)
 end
 
 ---@param name string
