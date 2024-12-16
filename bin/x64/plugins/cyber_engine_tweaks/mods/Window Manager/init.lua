@@ -20,6 +20,11 @@ registerForEvent('onInit', function()
     -- set as ready
     CETWM.ready = true
     CETWM.windows = settingsInst.windows
+    if CETWM.windows["Window Manager"] == nil then
+        local newIndex = utils.tableLength(CETWM.windows) + 1
+        CETWM.windows[utils.adjustWindowName("Window Manager")] = {visible = true, lastPos = {x = 100, y = 100}, isCollapsed = false, index = newIndex, locked = false, lastSize = {1,1}}
+        settingsInst.update(CETWM.windows)
+    end
 end)
 
 registerForEvent("onOverlayOpen", function()
@@ -105,19 +110,43 @@ local function changeWindowIndex(name, direction)
         return  -- Do nothing if the new index is out of bounds
     end
 
-    -- Adjust the indices of other windows
+    -- Temporarily sort CETWM.windows by index
+    local sortedWindows = {}
     for windowName, state in pairs(CETWM.windows) do
-        if state.index == newIndex then
-            CETWM.windows[windowName].index = currentIndex  -- Move the displaced window to the current index
-        elseif state.index == currentIndex then
-            CETWM.windows[windowName].index = newIndex  -- Move the current window to the new index
+        table.insert(sortedWindows, {name = windowName, state = state})
+    end
+
+    -- Sort windows by their index
+    table.sort(sortedWindows, function(a, b)
+        return a.state.index < b.state.index
+    end)
+
+    -- Find the current and new positions of the windows
+    local currentPosition, newPosition
+    for i, window in ipairs(sortedWindows) do
+        if window.name == name then
+            currentPosition = i
+        end
+        if window.state.index == newIndex then
+            newPosition = i
         end
     end
 
-    -- Finally, set the new index for the moved window
-    CETWM.windows[name].index = newIndex
+    -- Swap the windows in the sorted list
+    if currentPosition and newPosition then
+        -- Swap indices in the sorted list
+        sortedWindows[currentPosition], sortedWindows[newPosition] = sortedWindows[newPosition], sortedWindows[currentPosition]
+
+        -- Update the CETWM.windows with the new sorted order
+        for i, window in ipairs(sortedWindows) do
+            CETWM.windows[window.name].index = i
+        end
+    end
+
+    -- Update the settings
     settingsInst.update(CETWM.windows)
 end
+
 
 ---@param name string
 ---@param state table
@@ -128,12 +157,10 @@ local function lockWindowLoop(name, state)
         local curSizeX, curSizeY = ImGui.GetWindowSize()
         -- reset window pos if changed
         if not (state.lastPos[1] == curPosX and state.lastPos[2] == curPosY) or not state.lastPos[1] == curPosX or not state.lastPos[2] == curPosY then
-            print("Resetting Window Position")
             ImGui.SetWindowPos(state.lastPos[1], state.lastPos[2])
         end
         -- reset window size if changed
         if not (state.lastSize[1] == curSizeX and state.lastSize[2] == curSizeY) or not state.lastSize[1] == curSizeX or not state.lastSize[2] == curSizeY then
-            print("Resetting Window Size")
             ImGui.SetWindowSize(state.lastSize[1], state.lastSize[2])
         end
     end
@@ -148,7 +175,6 @@ local function addWindowTab()
         if ImGui.Button("Add") then
             if not utils.isBanned(windowName) then
                 local newIndex = utils.tableLength(CETWM.windows) + 1
-                print(newIndex)
                 CETWM.windows[utils.adjustWindowName(windowName)] = {visible = true, lastPos = {x = 100, y = 100}, isCollapsed = false, index = newIndex, locked = false}
                 settingsInst.update(CETWM.windows)
                 popUpBannedText = ""
@@ -186,15 +212,20 @@ local function addWindowTab()
 
         ImGui.SameLine()
         if ImGui.Button(IconGlyphs.Close .. "##" .. name) then
-            CETWM.windows[name] = nil
-            settingsInst.update(CETWM.windows)
+            if name == "Window Manager" then
+                local s = 1
+            else
+                showWindow(name, CETWM.windows[name])
+                CETWM.windows[name] = nil
+                settingsInst.update(CETWM.windows)
+            end
         end
         ImGui.SameLine()
         if ImGui.Button(IconGlyphs.Cached .. "##" .. name) then
             resetWindow(name, state)
         end
         ImGui.SameLine()
-        ImGui.Text(name)
+        ImGui.Text(name:match("([^#]+)"))
     end 
 end
 
@@ -242,12 +273,16 @@ local function manageWindowsTab()
         end
         
         if ImGui.Button(name, CETWM.minWidth, 0) then
-            state.visible = not state.visible  -- Toggle visibility
-            settingsInst.update(CETWM.windows)
-            if not state.visible then
-                hideWindow(name, state)
-            else 
-                showWindow(name, state)
+            if name == "Window Manager" then
+                local s = 1
+            else
+                state.visible = not state.visible  -- Toggle visibility
+                settingsInst.update(CETWM.windows)
+                if not state.visible then
+                    hideWindow(name, state)
+                else 
+                    showWindow(name, state)
+                end
             end
         end
         ImGui.PopStyleColor(3)  -- Pop all 3 style colors we pushed

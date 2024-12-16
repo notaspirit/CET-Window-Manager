@@ -1,5 +1,4 @@
 local window_blacklist = {
-    "Window Manager",
     ""
 }
 
@@ -12,7 +11,7 @@ local window_name_lookup = {
 
 ---@param table table
 ---@param value any
-local function isInTable(table, value) 
+local function isInTable(table, value)
     for _, v in ipairs(table) do
         if v == value then
             return true
