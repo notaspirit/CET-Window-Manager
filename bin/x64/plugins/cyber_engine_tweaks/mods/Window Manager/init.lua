@@ -48,7 +48,6 @@ local function hideWindowProcess(name)
         isCollapsed = ImGui.IsWindowCollapsed()
         x, y = ImGui.GetWindowPos()
         ImGui.SetWindowPos(10000, 10000)
-        ImGui.End() -- FOR TESTING
     end
     CETWM.windows[name].lastPos = {x,y}
     CETWM.windows[name].isCollapsed = isCollapsed
@@ -60,12 +59,10 @@ local function showWindowProcess(name)
     local metadata = CETWM.windows[name]
     if ImGui.Begin(name, true) then
         ImGui.SetWindowPos(metadata.lastPos[1], metadata.lastPos[2])
-        ImGui.End() -- FOR TESTING
     end
     if CETWM.windows[name].isCollasped then
         if ImGui.Begin(name, false) then
             local s = 1
-            ImGui.End() -- FOR TESTING
         end
     end
 end
@@ -122,7 +119,6 @@ local function toggleLockProcessPt2Process(name)
         isCollapsed = ImGui.IsWindowCollapsed()
         PosX, PosY = ImGui.GetWindowPos()
         SizeX, SizeY = ImGui.GetWindowSize()
-        ImGui.End() -- FOR TESTING
     end
     CETWM.windows[name].lastPos = {PosX, PosY}
     CETWM.windows[name].lastSize = {SizeX, SizeY}
@@ -250,7 +246,7 @@ local function addWindowTab()
         ImGui.Text(popUpBannedText)
         ImGui.EndPopup()
     end
-    ImGui.TextWrapped("Add Windows here by their display name. Disregard icons if they have any.")
+    ImGui.TextWrapped("Add windows here by their display name. Disregard icons if they have any.")
     ImGui.TextWrapped("If the window doesn't get affected despite being properly spelled (it's case sensitive), report it so it can be fixed.")
         
     local sortedWindows = utils.sortTable(CETWM.windows)
