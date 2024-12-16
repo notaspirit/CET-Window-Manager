@@ -14,6 +14,11 @@ local settingsInst = settings:getInstance()
 local windowName = ""
 local popUpBannedText = ""
 
+local deferredHide = {}
+local deferredShow = {}
+local deferredLock = {}
+local deferredLockPt2 = {}
+local deferredRemoval = {}
 
 -- onInit event
 registerForEvent('onInit', function() 
@@ -36,14 +41,14 @@ registerForEvent("onOverlayClose", function()
 end)
 
 ---@param name string
----@param metadata table
-local function hideWindow(name, metadata)
+local function hideWindowProcess(name)
     local x, y
     local isCollapsed = false
     if ImGui.Begin(name, true) then
         isCollapsed = ImGui.IsWindowCollapsed()
         x, y = ImGui.GetWindowPos()
         ImGui.SetWindowPos(10000, 10000)
+        ImGui.End() -- FOR TESTING
     end
     CETWM.windows[name].lastPos = {x,y}
     CETWM.windows[name].isCollapsed = isCollapsed
@@ -51,39 +56,65 @@ local function hideWindow(name, metadata)
 end
 
 ---@param name string
----@param metadata table
-local function showWindow(name, metadata)
+local function showWindowProcess(name)
+    local metadata = CETWM.windows[name]
     if ImGui.Begin(name, true) then
         ImGui.SetWindowPos(metadata.lastPos[1], metadata.lastPos[2])
+        ImGui.End() -- FOR TESTING
     end
     if CETWM.windows[name].isCollasped then
         if ImGui.Begin(name, false) then
             local s = 1
+            ImGui.End() -- FOR TESTING
         end
     end
-    CETWM.windows[name].visible = true
-
 end
 
 ---@param name string
----@param metadata table
-local function resetWindow(name, metadata)
+local function showWindow(name)
+    table.insert(deferredShow, name)
+end
+
+---@param name string
+local function hideWindow(name)
+    table.insert(deferredHide, name)
+end
+
+---@param name string
+local function resetWindow(name)
     CETWM.windows[name].lastPos = {200,200}
     CETWM.windows[name].isCollasped = false
     CETWM.windows[name].visible = true
     settingsInst.update(CETWM.windows)
-    showWindow(name, CETWM.windows[name])
+    showWindow(name)
 end
 
 ---@param name string
 local function toggleLock(name)
-    if CETWM.windows[name].locked then
+    table.insert(deferredLock, name)
+end
+
+---@param name string
+local function toggleLockProcessPt2(name)
+    table.insert(deferredLockPt2, name)
+end
+
+---@param name string
+local function toggleLockProcess(name)
+    local metadata = CETWM.windows[name]
+    if metadata.locked then
         CETWM.windows[name].locked = false
         return 
     end
-    if not CETWM.windows[name].visible then
-        showWindow(name, CETWM.windows[name])
+    if not metadata.visible then
+        showWindow(name)
     end
+    toggleLockProcessPt2(name)
+end
+
+---@param name string 
+local function toggleLockProcessPt2Process(name)
+    local metadata = CETWM.windows[name]
     local PosX, PosY
     local SizeX, SizeY
     local isCollapsed = false
@@ -91,11 +122,13 @@ local function toggleLock(name)
         isCollapsed = ImGui.IsWindowCollapsed()
         PosX, PosY = ImGui.GetWindowPos()
         SizeX, SizeY = ImGui.GetWindowSize()
+        ImGui.End() -- FOR TESTING
     end
     CETWM.windows[name].lastPos = {PosX, PosY}
     CETWM.windows[name].lastSize = {SizeX, SizeY}
     CETWM.windows[name].isCollapsed = isCollapsed
     CETWM.windows[name].locked = true
+    CETWM.windows[name].visible = true
     settingsInst.update(CETWM.windows)
 end
 
@@ -166,23 +199,48 @@ local function lockWindowLoop(name, state)
     end
 end
 
+---@param name string
+local function removeWindowProcessing(name)
+    CETWM.windows[name] = nil
+    local sortedWindows = utils.sortTable(CETWM.windows)
+
+    for i, entry in ipairs(sortedWindows) do 
+        CETWM.windows[entry.name].index = i
+    end
+    settingsInst.update(CETWM.windows)
+end
+
+local function addWindowName()
+    local adjustedWindowName = utils.adjustWindowName(windowName)
+    if CETWM.windows[adjustedWindowName] == nil then
+        if not utils.isBanned(windowName) then
+            local newIndex = utils.tableLength(CETWM.windows) + 1
+            CETWM.windows[utils.adjustWindowName(adjustedWindowName)] = {visible = true, lastPos = {x = 100, y = 100}, isCollapsed = false, index = newIndex, locked = false}
+            settingsInst.update(CETWM.windows)
+            popUpBannedText = ""
+            windowName = ""
+            ImGui.CloseCurrentPopup()
+        else
+            popUpBannedText = string.format("%s is not an allowed Window Name!", windowName)
+        end
+    else
+        popUpBannedText = windowName.." is already being managed!"
+        return
+    end
+end
+
 local function addWindowTab()
     if ImGui.Button("Add Window") then
         ImGui.OpenPopup("Add Window")
     end
     if ImGui.BeginPopup("Add Window") then
-        windowName, text_input_active = ImGui.InputText("Window Name", windowName, 100)
+        local text_input_active = false
+        windowName, text_input_active =  ImGui.InputText("##WindowNameInPopup", windowName, 100, ImGuiInputTextFlags.EnterReturnsTrue)
+        if text_input_active then
+            addWindowName()
+        end
         if ImGui.Button("Add") then
-            if not utils.isBanned(windowName) then
-                local newIndex = utils.tableLength(CETWM.windows) + 1
-                CETWM.windows[utils.adjustWindowName(windowName)] = {visible = true, lastPos = {x = 100, y = 100}, isCollapsed = false, index = newIndex, locked = false}
-                settingsInst.update(CETWM.windows)
-                popUpBannedText = ""
-                windowName = ""
-                ImGui.CloseCurrentPopup()
-            else
-                popUpBannedText = string.format("%s is not an allowed Window Name!", windowName)
-                end
+            addWindowName()
         end
         ImGui.SameLine()
         if ImGui.Button("Close") then
@@ -215,14 +273,13 @@ local function addWindowTab()
             if name == "Window Manager" then
                 local s = 1
             else
-                showWindow(name, CETWM.windows[name])
-                CETWM.windows[name] = nil
-                settingsInst.update(CETWM.windows)
+                showWindow(name)
+                table.insert(deferredRemoval, name)
             end
         end
         ImGui.SameLine()
         if ImGui.Button(IconGlyphs.Cached .. "##" .. name) then
-            resetWindow(name, state)
+            resetWindow(name)
         end
         ImGui.SameLine()
         ImGui.Text(name:match("([^#]+)"))
@@ -247,15 +304,15 @@ local function manageWindowsTab()
             -- Light color when enabled (you can adjust these RGB values)
             ImGui.PushStyleColor(ImGuiCol.Button, r, g, b, 1.0)
             ImGui.PushStyleColor(ImGuiCol.ButtonHovered, r*1.2, g*1.2, b*1.2, 1.0)
-            ImGui.PushStyleColor(ImGuiCol.ButtonActive, r*0.8, g*0.8, b*0.8, 1.0)
+            ImGui.PushStyleColor(ImGuiCol.ButtonActive, r*1.2, g*1.2, b*1.2, 1.0)
         else
             -- Dark color when disabled
             ImGui.PushStyleColor(ImGuiCol.Button, 0.2, 0.2, 0.2, 1.0)
             ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0.3, 0.3, 0.3, 1.0)
-            ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0.4, 0.4, 0.4, 1.0)
+            ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0.3, 0.3, 0.3, 1.0)
         end
 
-        if ImGui.Button(string.format("%s##%s", (state.locked and IconGlyphs.FileLock or IconGlyphs.FileLockOpen), name)) then
+        if ImGui.Button(string.format("%s##%s", (state.locked and IconGlyphs.Lock or IconGlyphs.LockOpenVariant), name)) then
             toggleLock(name)
         end
         ImGui.PopStyleColor(3)
@@ -264,12 +321,12 @@ local function manageWindowsTab()
             -- Light color when enabled (you can adjust these RGB values)
             ImGui.PushStyleColor(ImGuiCol.Button, r, g, b, 1.0)
             ImGui.PushStyleColor(ImGuiCol.ButtonHovered, r*1.2, g*1.2, b*1.2, 1.0)
-            ImGui.PushStyleColor(ImGuiCol.ButtonActive, r*0.8, g*0.8, b*0.8, 1.0)
+            ImGui.PushStyleColor(ImGuiCol.ButtonActive, r*1.2, g*1.2, b*1.2, 1.0)
         else
             -- Dark color when disabled
             ImGui.PushStyleColor(ImGuiCol.Button, 0.2, 0.2, 0.2, 1.0)
             ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0.3, 0.3, 0.3, 1.0)
-            ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0.4, 0.4, 0.4, 1.0)
+            ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0.3, 0.3, 0.3, 1.0)
         end
         
         if ImGui.Button(name, CETWM.minWidth, 0) then
@@ -279,9 +336,9 @@ local function manageWindowsTab()
                 state.visible = not state.visible  -- Toggle visibility
                 settingsInst.update(CETWM.windows)
                 if not state.visible then
-                    hideWindow(name, state)
+                    hideWindow(name)
                 else 
-                    showWindow(name, state)
+                    showWindow(name)
                 end
             end
         end
@@ -310,6 +367,30 @@ registerForEvent("onDraw", function()
         if state.visible and state.locked then
             lockWindowLoop(name, state)
         end
-
     end
+    -- Process all deferred hide actions
+    for _, name in ipairs(deferredHide) do
+        hideWindowProcess(name)
+    end
+    deferredHide = {}  -- Clear the deferred hide actions
+    -- Process all deferred lock actions
+    for _, name in ipairs(deferredLock) do
+        toggleLockProcess(name)
+    end
+    deferredLock = {}  -- Clear the deferred show actions
+    -- Process all deferred show actions
+    for _, name in ipairs(deferredShow) do
+        showWindowProcess(name)
+    end
+    deferredShow = {}  -- Clear the deferred show actions
+    -- Process all deferred show actions
+    for _, name in ipairs(deferredLockPt2) do
+        toggleLockProcessPt2Process(name)
+    end
+    deferredLockPt2 = {}  -- Clear the deferred show actions
+
+    for _, name in ipairs(deferredRemoval) do
+        removeWindowProcessing(name)
+    end
+    deferredRemoval = {}
 end)
