@@ -1,3 +1,21 @@
+--[[
+                                                
+ /      \|        \        \    |  \  _  |  \  \              |  \                          |  \     /  \                                                      
+|  ▓▓▓▓▓▓\ ▓▓▓▓▓▓▓▓\▓▓▓▓▓▓▓▓    | ▓▓ / \ | ▓▓\▓▓_______   ____| ▓▓ ______  __   __   __     | ▓▓\   /  ▓▓ ______  _______   ______   ______   ______   ______  
+| ▓▓   \▓▓ ▓▓__      | ▓▓       | ▓▓/  ▓\| ▓▓  \       \ /      ▓▓/      \|  \ |  \ |  \    | ▓▓▓\ /  ▓▓▓|      \|       \ |      \ /      \ /      \ /      \ 
+| ▓▓     | ▓▓  \     | ▓▓       | ▓▓  ▓▓▓\ ▓▓ ▓▓ ▓▓▓▓▓▓▓\  ▓▓▓▓▓▓▓  ▓▓▓▓▓▓\ ▓▓ | ▓▓ | ▓▓    | ▓▓▓▓\  ▓▓▓▓ \▓▓▓▓▓▓\ ▓▓▓▓▓▓▓\ \▓▓▓▓▓▓\  ▓▓▓▓▓▓\  ▓▓▓▓▓▓\  ▓▓▓▓▓▓\
+| ▓▓   __| ▓▓▓▓▓     | ▓▓       | ▓▓ ▓▓\▓▓\▓▓ ▓▓ ▓▓  | ▓▓ ▓▓  | ▓▓ ▓▓  | ▓▓ ▓▓ | ▓▓ | ▓▓    | ▓▓\▓▓ ▓▓ ▓▓/      ▓▓ ▓▓  | ▓▓/      ▓▓ ▓▓  | ▓▓ ▓▓    ▓▓ ▓▓   \▓▓
+| ▓▓__/  \ ▓▓_____   | ▓▓       | ▓▓▓▓  \▓▓▓▓ ▓▓ ▓▓  | ▓▓ ▓▓__| ▓▓ ▓▓__/ ▓▓ ▓▓_/ ▓▓_/ ▓▓    | ▓▓ \▓▓▓| ▓▓  ▓▓▓▓▓▓▓ ▓▓  | ▓▓  ▓▓▓▓▓▓▓ ▓▓__| ▓▓ ▓▓▓▓▓▓▓▓ ▓▓      
+ \▓▓    ▓▓ ▓▓     \  | ▓▓       | ▓▓▓    \▓▓▓ ▓▓ ▓▓  | ▓▓\▓▓    ▓▓\▓▓    ▓▓\▓▓   ▓▓   ▓▓    | ▓▓  \▓ | ▓▓\▓▓    ▓▓ ▓▓  | ▓▓\▓▓    ▓▓\▓▓    ▓▓\▓▓     \ ▓▓      
+  \▓▓▓▓▓▓ \▓▓▓▓▓▓▓▓   \▓▓        \▓▓      \▓▓\▓▓\▓▓   \▓▓ \▓▓▓▓▓▓▓ \▓▓▓▓▓▓  \▓▓▓▓▓\▓▓▓▓      \▓▓      \▓▓ \▓▓▓▓▓▓▓\▓▓   \▓▓ \▓▓▓▓▓▓▓_\▓▓▓▓▓▓▓ \▓▓▓▓▓▓▓\▓▓      
+                                                                                                                                   |  \__| ▓▓                  
+                                                                                                                                    \▓▓    ▓▓                  
+                                                                                                                                     \▓▓▓▓▓▓                   
+by: spirit (discord: sprt_)
+version: 1.0.0
+]]
+
+-- imports
 local utils = require('modules/utils')
 local settings = require('modules/jsonUtils')
 local styles = require('data/styles')
@@ -6,14 +24,13 @@ local textEnums = require('data/textEnums')
 -- mod info
 CETWM = {
     ready = false,
-    windows = {}, -- Store window states: {name = {visible = bool, lastPos = {x,y}, isCollapsed = bool, index = int, locked = bool}}
+    windows = {}, -- Store window states: {name = {visible = bool, lastPos = {x,y}, isCollapsed = bool, index = int, locked = bool, lastSize = {x,y}}}
     -- this table now acts are the "working" or temp dir that then gets merged into the settingService and saved
     overlayOpen = false,
     minWidth = 0
 }
 
 local settingsInst = settings:getInstance()
-local WMFlags = bit32.bor(ImGuiWindowFlags.AlwaysAutoResize, ImGuiWindowFlags.NoScrollbar)
 local windowName = ""
 local popUpBannedText = ""
 
@@ -22,6 +39,7 @@ local deferredShow = {}
 local deferredLock = {}
 local deferredLockPt2 = {}
 local deferredRemoval = {}
+local sendError = false -- used when packages fail to initialize
 
 ---@return boolean
 local function checkPackages()
@@ -37,6 +55,7 @@ local function hideWindowProcess(name)
         isCollapsed = ImGui.IsWindowCollapsed()
         x, y = ImGui.GetWindowPos()
         ImGui.SetWindowPos(10000, 10000)
+        ImGui.End()
     end
     CETWM.windows[name].lastPos = {x,y}
     CETWM.windows[name].isCollapsed = isCollapsed
@@ -49,10 +68,12 @@ local function showWindowProcess(name)
     local metadata = CETWM.windows[name]
     if ImGui.Begin(name, true) then
         ImGui.SetWindowPos(metadata.lastPos[1], metadata.lastPos[2])
+        ImGui.End()
     end
     if CETWM.windows[name].isCollasped then
         if ImGui.Begin(name, false) then
             local s = 1
+            ImGui.End()
         end
     end
 end
@@ -116,6 +137,7 @@ local function toggleLockProcessPt2Process(name)
         isCollapsed = ImGui.IsWindowCollapsed()
         PosX, PosY = ImGui.GetWindowPos()
         SizeX, SizeY = ImGui.GetWindowSize()
+        ImGui.End()
     end
     CETWM.windows[name].lastPos = {PosX, PosY}
     CETWM.windows[name].lastSize = {SizeX, SizeY}
@@ -191,6 +213,7 @@ local function lockWindowLoop(name, state)
         if not (state.lastSize[1] == curSizeX and state.lastSize[2] == curSizeY) or not state.lastSize[1] == curSizeX or not state.lastSize[2] == curSizeY then
             ImGui.SetWindowSize(state.lastSize[1], state.lastSize[2])
         end
+        ImGui.End()
     end
 end
 
@@ -364,15 +387,15 @@ end)
 -- onDraw event to render ImGui windows
 registerForEvent("onDraw", function()
     if not CETWM.overlayOpen then return end
-    if not CETWM.ready then
-        if ImGui.Begin("Window Manager", true, WMFlags) then
-            ImGui.Text("Failed to initialize packages!")
-            ImGui.Text("Check that the mod is correctly installed")
-            ImGui.End()
+    if CETWM.ready == false then
+        if sendError then
+            return
         end
-    
-    return end
-
+        print("ERROR: Window Manager failed to intilize packages!")
+        sendError = true
+        return 
+    end
+    local WMFlags = bit32.bor(ImGuiWindowFlags.AlwaysAutoResize, ImGuiWindowFlags.NoScrollbar)
     if ImGui.Begin("Window Manager", true, WMFlags) then
         if ImGui.BeginTabBar("TabList1") then
             if ImGui.BeginTabItem("Toggle") then

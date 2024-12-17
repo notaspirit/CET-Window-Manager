@@ -169,7 +169,6 @@ local function loadSettings()
     -- Check if file exists
     local settingsFile = io.open("data/settings.json", "r")
     if not settingsFile then
-        print("ERROR: Failed to open 'data/settings.json' expected file, got nil!")
         return nil
     end
     -- Read the file content
@@ -214,7 +213,7 @@ local function saveSettings()
     local settingsString = jsonUtils.TableToJSON(settingsTable)
     local settingsFile = io.open("data/settings.json", "w")
     if not settingsFile then
-        print("ERROR: Failed to open 'data/settings.json' expected file, got nil!")
+        print("ERROR: Window Manager failed to open 'data/settings.json' expected file, got nil!")
         return
     end
     
@@ -241,5 +240,4 @@ end
 function settings:save()
     saveSettings()
 end
-
 return settings

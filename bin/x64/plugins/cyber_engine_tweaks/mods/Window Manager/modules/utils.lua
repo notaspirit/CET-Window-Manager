@@ -37,10 +37,12 @@ local function tableLength(input)
     return count
 end
 
----@param displayName string
-local function adjustWindowName(displayName) 
+---@param inputName string
+local function adjustWindowName(inputName)
+    local displayName = inputName:match("^%s*(.-)%s*$")
     return window_name_lookup[displayName] or displayName
 end
+
 
 ---@param windowTable table
 local function longestStringLengthPx(windowTable)
