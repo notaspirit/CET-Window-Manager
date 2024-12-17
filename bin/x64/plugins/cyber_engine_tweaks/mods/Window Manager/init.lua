@@ -1,5 +1,7 @@
 local utils = require('modules/utils')
 local settings = require('modules/jsonUtils')
+local styles = require('data/styles')
+local textEnums = require('data/textEnums')
 
 -- mod info
 CETWM = {
@@ -11,6 +13,7 @@ CETWM = {
 }
 
 local settingsInst = settings:getInstance()
+local WMFlags = bit32.bor(ImGuiWindowFlags.AlwaysAutoResize, ImGuiWindowFlags.NoScrollbar)
 local windowName = ""
 local popUpBannedText = ""
 
@@ -20,27 +23,13 @@ local deferredLock = {}
 local deferredLockPt2 = {}
 local deferredRemoval = {}
 
--- onInit event
-registerForEvent('onInit', function() 
-    -- set as ready
-    CETWM.ready = true
-    CETWM.windows = settingsInst.windows
-    if CETWM.windows["Window Manager"] == nil then
-        local newIndex = utils.tableLength(CETWM.windows) + 1
-        CETWM.windows[utils.adjustWindowName("Window Manager")] = {visible = true, lastPos = {x = 100, y = 100}, isCollapsed = false, index = newIndex, locked = false, lastSize = {1,1}}
-        settingsInst.update(CETWM.windows)
-    end
-end)
-
-registerForEvent("onOverlayOpen", function()
-    CETWM.overlayOpen = true
-end)
-
-registerForEvent("onOverlayClose", function()
-    CETWM.overlayOpen = false
-end)
+---@return boolean
+local function checkPackages()
+    return utils ~= nil and settings ~= nil and styles ~= nil and textEnums ~= nil
+end
 
 ---@param name string
+---@return void
 local function hideWindowProcess(name)
     local x, y
     local isCollapsed = false
@@ -55,6 +44,7 @@ local function hideWindowProcess(name)
 end
 
 ---@param name string
+---@return void
 local function showWindowProcess(name)
     local metadata = CETWM.windows[name]
     if ImGui.Begin(name, true) then
@@ -68,16 +58,19 @@ local function showWindowProcess(name)
 end
 
 ---@param name string
+---@return void
 local function showWindow(name)
     table.insert(deferredShow, name)
 end
 
 ---@param name string
+---@return void
 local function hideWindow(name)
     table.insert(deferredHide, name)
 end
 
 ---@param name string
+---@return void
 local function resetWindow(name)
     CETWM.windows[name].lastPos = {200,200}
     CETWM.windows[name].isCollasped = false
@@ -87,16 +80,19 @@ local function resetWindow(name)
 end
 
 ---@param name string
+---@return void
 local function toggleLock(name)
     table.insert(deferredLock, name)
 end
 
 ---@param name string
+---@return void
 local function toggleLockProcessPt2(name)
     table.insert(deferredLockPt2, name)
 end
 
 ---@param name string
+---@return void
 local function toggleLockProcess(name)
     local metadata = CETWM.windows[name]
     if metadata.locked then
@@ -110,6 +106,7 @@ local function toggleLockProcess(name)
 end
 
 ---@param name string 
+---@return void
 local function toggleLockProcessPt2Process(name)
     local metadata = CETWM.windows[name]
     local PosX, PosY
@@ -130,6 +127,7 @@ end
 
 ---@param name string
 ---@param direction int
+---@return void
 local function changeWindowIndex(name, direction)
     local currentIndex = CETWM.windows[name].index
     local newIndex = currentIndex + direction
@@ -179,6 +177,7 @@ end
 
 ---@param name string
 ---@param state table
+---@return void
 local function lockWindowLoop(name, state) 
     if ImGui.Begin(name, true) then 
         -- get current pos and size
@@ -196,6 +195,7 @@ local function lockWindowLoop(name, state)
 end
 
 ---@param name string
+---@return void
 local function removeWindowProcessing(name)
     CETWM.windows[name] = nil
     local sortedWindows = utils.sortTable(CETWM.windows)
@@ -206,6 +206,7 @@ local function removeWindowProcessing(name)
     settingsInst.update(CETWM.windows)
 end
 
+---@return void
 local function addWindowName()
     local adjustedWindowName = utils.adjustWindowName(windowName)
     if CETWM.windows[adjustedWindowName] == nil then
@@ -225,6 +226,7 @@ local function addWindowName()
     end
 end
 
+---@return void
 local function addWindowTab()
     if ImGui.Button("Add Window") then
         ImGui.OpenPopup("Add Window")
@@ -246,8 +248,7 @@ local function addWindowTab()
         ImGui.Text(popUpBannedText)
         ImGui.EndPopup()
     end
-    ImGui.TextWrapped("Add windows here by their display name. Disregard icons if they have any.")
-    ImGui.TextWrapped("If the window doesn't get affected despite being properly spelled (it's case sensitive), report it so it can be fixed.")
+    ImGui.TextWrapped(textEnums.DisclaimerSettings)
         
     local sortedWindows = utils.sortTable(CETWM.windows)
 
@@ -282,14 +283,9 @@ local function addWindowTab()
     end 
 end
 
+---@return void
 local function manageWindowsTab()
     CETWM.minWidth = utils.longestStringLenghtPX(CETWM.windows)
-
-    -- colors for when the window is visible
-    local r = 0.22
-    local g = 0.48
-    local b = 0.8
-    
     local sortedWindows = utils.sortTable(CETWM.windows)
 
     for _, window in ipairs(sortedWindows) do
@@ -297,32 +293,34 @@ local function manageWindowsTab()
         local state = window.state
 
         if state.locked then
-            -- Light color when enabled (you can adjust these RGB values)
-            ImGui.PushStyleColor(ImGuiCol.Button, r, g, b, 1.0)
-            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, r*1.2, g*1.2, b*1.2, 1.0)
-            ImGui.PushStyleColor(ImGuiCol.ButtonActive, r*1.2, g*1.2, b*1.2, 1.0)
+            -- Light color when enabled
+            ImGui.PushStyleColor(ImGuiCol.Button, styles.button_styled_enabled.Button.r, styles.button_styled_enabled.Button.g, styles.button_styled_enabled.Button.b, styles.button_styled_enabled.Button.a)
+            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, styles.button_styled_enabled.ButtonHovered.r, styles.button_styled_enabled.ButtonHovered.g, styles.button_styled_enabled.ButtonHovered.b, styles.button_styled_enabled.ButtonHovered.a)
+            ImGui.PushStyleColor(ImGuiCol.ButtonActive, styles.button_styled_enabled.ButtonActive.r, styles.button_styled_enabled.ButtonActive.g, styles.button_styled_enabled.ButtonActive.b, styles.button_styled_enabled.ButtonActive.a)
         else
             -- Dark color when disabled
-            ImGui.PushStyleColor(ImGuiCol.Button, 0.2, 0.2, 0.2, 1.0)
-            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0.3, 0.3, 0.3, 1.0)
-            ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0.3, 0.3, 0.3, 1.0)
+            ImGui.PushStyleColor(ImGuiCol.Button, styles.button_styled_disabled.Button.r, styles.button_styled_disabled.Button.g, styles.button_styled_disabled.Button.b, styles.button_styled_disabled.Button.a)
+            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, styles.button_styled_disabled.ButtonHovered.r, styles.button_styled_disabled.ButtonHovered.g, styles.button_styled_disabled.ButtonHovered.b, styles.button_styled_disabled.ButtonHovered.a)
+            ImGui.PushStyleColor(ImGuiCol.ButtonActive, styles.button_styled_disabled.ButtonActive.r, styles.button_styled_disabled.ButtonActive.g, styles.button_styled_disabled.ButtonActive.b, styles.button_styled_disabled.ButtonActive.a)
         end
+
 
         if ImGui.Button(string.format("%s##%s", (state.locked and IconGlyphs.Lock or IconGlyphs.LockOpenVariant), name)) then
             toggleLock(name)
         end
         ImGui.PopStyleColor(3)
         ImGui.SameLine()
+
         if state.visible then
-            -- Light color when enabled (you can adjust these RGB values)
-            ImGui.PushStyleColor(ImGuiCol.Button, r, g, b, 1.0)
-            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, r*1.2, g*1.2, b*1.2, 1.0)
-            ImGui.PushStyleColor(ImGuiCol.ButtonActive, r*1.2, g*1.2, b*1.2, 1.0)
+            -- Light color when enabled
+            ImGui.PushStyleColor(ImGuiCol.Button, styles.button_styled_enabled.Button.r, styles.button_styled_enabled.Button.g, styles.button_styled_enabled.Button.b, styles.button_styled_enabled.Button.a)
+            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, styles.button_styled_enabled.ButtonHovered.r, styles.button_styled_enabled.ButtonHovered.g, styles.button_styled_enabled.ButtonHovered.b, styles.button_styled_enabled.ButtonHovered.a)
+            ImGui.PushStyleColor(ImGuiCol.ButtonActive, styles.button_styled_enabled.ButtonActive.r, styles.button_styled_enabled.ButtonActive.g, styles.button_styled_enabled.ButtonActive.b, styles.button_styled_enabled.ButtonActive.a)
         else
             -- Dark color when disabled
-            ImGui.PushStyleColor(ImGuiCol.Button, 0.2, 0.2, 0.2, 1.0)
-            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0.3, 0.3, 0.3, 1.0)
-            ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0.3, 0.3, 0.3, 1.0)
+            ImGui.PushStyleColor(ImGuiCol.Button, styles.button_styled_disabled.Button.r, styles.button_styled_disabled.Button.g, styles.button_styled_disabled.Button.b, styles.button_styled_disabled.Button.a)
+            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, styles.button_styled_disabled.ButtonHovered.r, styles.button_styled_disabled.ButtonHovered.g, styles.button_styled_disabled.ButtonHovered.b, styles.button_styled_disabled.ButtonHovered.a)
+            ImGui.PushStyleColor(ImGuiCol.ButtonActive, styles.button_styled_disabled.ButtonActive.r, styles.button_styled_disabled.ButtonActive.g, styles.button_styled_disabled.ButtonActive.b, styles.button_styled_disabled.ButtonActive.a)
         end
         
         if ImGui.Button(name, CETWM.minWidth, 0) then
@@ -342,10 +340,39 @@ local function manageWindowsTab()
     end
 end
 
+-- onInit event
+registerForEvent('onInit', function() 
+    if not checkPackages() then return end
+    -- set as ready
+    CETWM.ready = true
+    CETWM.windows = settingsInst.windows
+    if CETWM.windows["Window Manager"] == nil then
+        local newIndex = utils.tableLength(CETWM.windows) + 1
+        CETWM.windows[utils.adjustWindowName("Window Manager")] = {visible = true, lastPos = {x = 100, y = 100}, isCollapsed = false, index = newIndex, locked = false, lastSize = {1,1}}
+        settingsInst.update(CETWM.windows)
+    end
+end)
+
+registerForEvent("onOverlayOpen", function()
+    CETWM.overlayOpen = true
+end)
+
+registerForEvent("onOverlayClose", function()
+    CETWM.overlayOpen = false
+end)
+
 -- onDraw event to render ImGui windows
 registerForEvent("onDraw", function()
     if not CETWM.overlayOpen then return end
-    local WMFlags = bit32.bor(ImGuiWindowFlags.AlwaysAutoResize, ImGuiWindowFlags.NoScrollbar)
+    if not CETWM.ready then
+        if ImGui.Begin("Window Manager", true, WMFlags) then
+            ImGui.Text("Failed to initialize packages!")
+            ImGui.Text("Check that the mod is correctly installed")
+            ImGui.End()
+        end
+    
+    return end
+
     if ImGui.Begin("Window Manager", true, WMFlags) then
         if ImGui.BeginTabBar("TabList1") then
             if ImGui.BeginTabItem("Toggle") then
@@ -359,6 +386,9 @@ registerForEvent("onDraw", function()
         end
         ImGui.End()
     end
+    -- Run the lock in place loop
+    -- all of these functions *HAVE* to be at the end of the draw call otherwise you will get flickering in the UI 
+    ---> don't call `ImGui.Begin()` while within another `ImGui.Begin()`
     for name, state in pairs(CETWM.windows) do
         if state.visible and state.locked then
             lockWindowLoop(name, state)

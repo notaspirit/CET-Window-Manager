@@ -1,5 +1,7 @@
 
 -- Helper function to escape special characters in strings
+---@param str string
+---@return string, int
 local function escapeString(str)
     return str:gsub("\\", "\\\\")  -- Escape backslashes
               :gsub('"', '\\"')    -- Escape double quotes
@@ -11,6 +13,9 @@ local function escapeString(str)
 end
 
 -- Converts a table to a JSON string
+---@param value table | int | string | boolean
+---@param indentLevel any
+---@return string
 function TableToJSON(value, indentLevel)
     indentLevel = indentLevel or 0
     local indent = string.rep("  ", indentLevel)  -- Two spaces per indent level
@@ -37,14 +42,14 @@ function TableToJSON(value, indentLevel)
         return string.format('"%s"', escapeString(value))  -- Use escapeString to handle special characters
     elseif type(value) == "number" or type(value) == "boolean" then
         return tostring(value)  -- Directly return numbers and booleans
-    elseif value.__type == "visualizationBox" or value.__type == "box" then
-        return TableToJSON(value:toTable(), indentLevel)
     else
         return "null"  -- Handle nil values
     end
 end
 
 -- Convert JSON string to Lua table
+---@param jsonStr string
+---@return table | string | int | boolean | nil
 function JSONToTable(jsonStr)
     -- Remove whitespace
     jsonStr = jsonStr:gsub("^%s*(.-)%s*$", "%1")
@@ -151,6 +156,7 @@ local jsonUtils = {
 
 }
 
+---@class settings
 local settings = {}
 settings.__index = settings
 
@@ -158,6 +164,7 @@ settings.__index = settings
 local instance = nil
 
 -- Loads the settings from the settings.json file
+---@return table | nil
 local function loadSettings()
     -- Check if file exists
     local settingsFile = io.open("data/settings.json", "r")
@@ -189,6 +196,7 @@ local function init(self)
 end
 
 -- returns the single global instance
+---@return settings
 function settings.getInstance()
     if instance == nil then
         instance = setmetatable({}, settings)
@@ -197,6 +205,7 @@ function settings.getInstance()
     return instance
 end
 
+---@return void
 local function saveSettings()
     local settingsInst = settings.getInstance()
     
@@ -219,6 +228,8 @@ local function saveSettings()
     end
 end
 
+---@param value any
+---@return void
 function settings:update(value)  -- Changed parameter name from 'type' to 'settingType'
     -- Update the value
     self.windows = value
@@ -226,6 +237,7 @@ function settings:update(value)  -- Changed parameter name from 'type' to 'setti
     saveSettings()
 end
 
+---@return void
 function settings:save()
     saveSettings()
 end
