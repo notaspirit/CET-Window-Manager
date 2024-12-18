@@ -6,7 +6,9 @@ local window_name_lookup = {
     ["World Inspector"] = "World Inspector##RHT:WorldTools",
     ["Ink Inspector"] = "Ink Inspector##RHT:InkTools:MainWindow",
     ["Hot Reload"] = "Hot Reload##RHT:HotReload",
-    ["Simple Utils"] = IconGlyphs.Cog .. " Simple Utils"
+    ["Simple Utils"] = IconGlyphs.Cog .. " Simple Utils",
+    ["No Forced Weapon On Carrying Bodies"] = "No Forced Weapon On Carrying Bodies Mod Window",
+    ["No Forced Weapon On Carrying Bodie"] = "No Forced Weapon On Carrying Bodies Mod Window"
 }
 
 ---@param table table
