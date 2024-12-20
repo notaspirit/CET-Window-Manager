@@ -214,7 +214,6 @@ local function saveSettings()
     
     local settingsString = jsonUtils.TableToJSON(settingsTable)
     local settingsFile = io.open("data/settings.json", "w")
-    settingsFile = nil 
     if not settingsFile then
         logger:error("ERROR: Window Manager failed to open 'data/settings.json' expected file, got nil!")
         return
