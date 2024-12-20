@@ -1,5 +1,5 @@
+local logger = require("modules/logger")
 
--- Helper function to escape special characters in strings
 ---@param str string
 ---@return string, int
 local function escapeString(str)
@@ -179,7 +179,7 @@ local function loadSettings()
         return jsonUtils.JSONToTable(settingsString)
     end)
     if not success or not settingsTable then
-        print("Failed to parse settings file")
+        logger:error("Failed to parse settings file")
         return nil
     end
     return settingsTable
@@ -188,9 +188,11 @@ end
 local function init(self)
     local savedSettings = loadSettings()
     if savedSettings then
-        self.windows = savedSettings
+        self.windows = savedSettings.windows
+        self.settings = savedSettings.settings
     else
         self.windows = {}
+        self.settings = {localization = "en-us", hide_disclaimer = false}
     end
 end
 
@@ -208,12 +210,13 @@ end
 local function saveSettings()
     local settingsInst = settings.getInstance()
     
-    local settingsTable = settingsInst.windows
+    local settingsTable = {windows = settingsInst.windows, settings = settingsInst.settings}
     
     local settingsString = jsonUtils.TableToJSON(settingsTable)
     local settingsFile = io.open("data/settings.json", "w")
+    settingsFile = nil 
     if not settingsFile then
-        print("ERROR: Window Manager failed to open 'data/settings.json' expected file, got nil!")
+        logger:error("ERROR: Window Manager failed to open 'data/settings.json' expected file, got nil!")
         return
     end
     
@@ -223,15 +226,21 @@ local function saveSettings()
     end)
     
     if not success then
-        print("Failed to write settings: " .. (errorMsg or ""))
+        logger:error("Failed to write settings: " .. (errorMsg or ""))
     end
 end
 
----@param value any
+---@param value table
+---@param type string
 ---@return void
-function settings:update(value)  -- Changed parameter name from 'type' to 'settingType'
+function settings:update(value, type)  -- Changed parameter name from 'type' to 'settingType'
     -- Update the value
-    self.windows = value
+    if type == "windows" then
+        self.windows = value
+    end
+    if type == "settings" then
+        self.settings = value
+    end
     -- Save after any change
     saveSettings()
 end

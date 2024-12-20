@@ -1,0 +1,21 @@
+return {
+    modName = "Window Manager 23",
+    disallowedName = "is not an allowed Window Name!",
+    alreadyManaged = "is already being managed!",
+    addWindow = "Add Window",
+    add = "Add",
+    close = "Close",
+    tabToggle = "Toggle",
+    tabSettings = "Settings",
+    tabWindows = "Windows",
+    tabMod = "Mod",
+    disclaimerSettings = "Add windows here by their display name. Disregard icons if they have any. \nIf the window doesn't get affected despite being properly spelled (it's case sensitive), report it so it can be fixed.",
+    hideDisclaimer = "Hide Disclaimer",
+    localization = "Language",
+    version = "Version",
+    by = "By",
+    errFailedInit = "ERROR: Window Manager failed to intilize packages!",
+    errFailedReadSettings = "ERROR: Window Manager failed to read 'data/settings.json' expected file, got nil!",
+    errFailedWriteSettings = "ERROR: Window failed to write settings: ",
+    errFailedParse = "ERROR: Window Manager failed to parse settings file!"
+}

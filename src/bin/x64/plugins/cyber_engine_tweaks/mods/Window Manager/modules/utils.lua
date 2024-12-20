@@ -71,13 +71,33 @@ local function sortTable(tableInput)
     return sortedWindows
 end
 
+---@param filename string
+local function remove_extension(filename)
+    return filename:match("(.+)%..+$") or filename
+end
+
+---@param tableInput table
+local function deepCopy(tableInput)
+    local newTable = {}
+    for key, value in pairs(tableInput) do
+        if type(value) == "table" then
+            newTable[key] = deepCopy(value)
+        else
+            newTable[key] = value
+        end
+    end
+    return newTable
+end
+
 local utils = {
     isBanned = isBanned,
     isInTable = isInTable,
     tableLength = tableLength,
     adjustWindowName = adjustWindowName,
     longestStringLenghtPX = longestStringLengthPx,
-    sortTable = sortTable
+    sortTable = sortTable,
+    remove_extension = remove_extension,
+    deepCopy = deepCopy
 }
 
 return utils
