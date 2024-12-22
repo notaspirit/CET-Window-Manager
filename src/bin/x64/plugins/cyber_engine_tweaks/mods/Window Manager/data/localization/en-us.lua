@@ -1,5 +1,5 @@
 return {
-    modName = "Window Manager 23",
+    modName = "Window Manager",
     disallowedName = "is not an allowed Window Name!",
     alreadyManaged = "is already being managed!",
     addWindow = "Add Window",
@@ -14,8 +14,8 @@ return {
     localization = "Language",
     version = "Version",
     by = "By",
-    errFailedInit = "ERROR: Window Manager failed to intilize packages!",
-    errFailedReadSettings = "ERROR: Window Manager failed to read 'data/settings.json' expected file, got nil!",
-    errFailedWriteSettings = "ERROR: Window failed to write settings: ",
-    errFailedParse = "ERROR: Window Manager failed to parse settings file!"
+    finalInit = "Window Manager finished intilizing!",
+    errFailedRefreshLocalization = "ERROR: Window Manager failed to refresh localization!",
+    errFailedGettingAllLocalizations = "ERROR: Window Manager failed to refresh list of localizations!"
 }
+

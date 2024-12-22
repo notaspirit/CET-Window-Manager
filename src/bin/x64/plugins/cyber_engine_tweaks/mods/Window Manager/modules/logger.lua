@@ -1,6 +1,7 @@
 ---@class logger
----@method info()
----@method error()
+---@method info(message: string)
+---@method error(message: string)
+---@method warn(message: string)
 
 local logger = {}
 logger.__index = logger

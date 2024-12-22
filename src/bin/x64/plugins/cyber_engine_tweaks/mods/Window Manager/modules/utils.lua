@@ -1,15 +1,6 @@
-local window_blacklist = {
-    ""
-}
 
-local window_name_lookup = {
-    ["World Inspector"] = "World Inspector##RHT:WorldTools",
-    ["Ink Inspector"] = "Ink Inspector##RHT:InkTools:MainWindow",
-    ["Hot Reload"] = "Hot Reload##RHT:HotReload",
-    ["Simple Utils"] = IconGlyphs.Cog .. " Simple Utils",
-    ["No Forced Weapon On Carrying Bodies"] = "No Forced Weapon On Carrying Bodies Mod Window",
-    ["No Forced Weapon On Carrying Bodie"] = "No Forced Weapon On Carrying Bodies Mod Window"
-}
+local window_lookup = require("data/window_lookup")
+
 
 ---@param table table
 ---@param value any
@@ -24,7 +15,7 @@ end
 
 ---@param input string 
 local function isBanned(input)
-    if isInTable(window_blacklist, input) then
+    if isInTable(window_lookup.window_blacklist, input) then
         return true
     end
     return false
@@ -42,7 +33,7 @@ end
 ---@param inputName string
 local function adjustWindowName(inputName)
     local displayName = inputName:match("^%s*(.-)%s*$")
-    return window_name_lookup[displayName] or displayName
+    return window_lookup.window_name_lookup[displayName] or displayName
 end
 
 

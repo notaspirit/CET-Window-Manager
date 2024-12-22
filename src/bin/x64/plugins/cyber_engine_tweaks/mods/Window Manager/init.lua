@@ -17,7 +17,7 @@ by: spirit (discord: sprt_)
 local version = '1.1.0'
 
 local utils = require('modules/utils')
-local settings = require('modules/jsonUtils')
+local settings = require('modules/settings')
 local styles = require('data/styles')
 local localizationService = require('modules/localization')
 local logger = require('modules/logger')
@@ -48,15 +48,18 @@ local requestedLanguageSwitch = ''
 
 ---@return boolean
 local function checkPackages()
+    local hasError = false
     local packages = {utils, settings, styles, localizationService, logger}
     for _, package in ipairs(packages) do
         if package == nil then
+            hasError = true
             print("ERROR: Window Manager failed to intilize package: " .. tostring(_))
             spdlog.error("ERROR: Window Manager failed to intilize package: " .. tostring(_))
-            return false
         end
     end
-    logger:info("Window Manager finished intilizing packages!")
+    if hasError then
+        return false
+    end
     return true
 end
 
@@ -69,6 +72,7 @@ local function hideWindowProcess(name)
         isCollapsed = ImGui.IsWindowCollapsed()
         x, y = ImGui.GetWindowPos()
         ImGui.SetWindowPos(10000, 10000)
+        ImGui.SetWindowCollapsed(true)
         ImGui.End()
     end
     CETWM.windows[name].lastPos = {x,y}
@@ -82,12 +86,12 @@ local function showWindowProcess(name)
     local metadata = CETWM.windows[name]
     if ImGui.Begin(name, true) then
         ImGui.SetWindowPos(metadata.lastPos[1], metadata.lastPos[2])
-        ImGui.End()
-    end
-    if CETWM.windows[name].isCollasped then
-        if ImGui.Begin(name, false) then
-            ImGui.End()
+        if metadata.isCollapsed then
+            ImGui.SetWindowCollapsed(true)
+        else 
+            ImGui.SetWindowCollapsed(false)
         end
+        ImGui.End()
     end
 end
 
@@ -107,7 +111,7 @@ end
 ---@return void
 local function resetWindow(name)
     CETWM.windows[name].lastPos = {200,200}
-    CETWM.windows[name].isCollasped = false
+    CETWM.windows[name].isCollapsed = false
     CETWM.windows[name].visible = true
     settingsInst:update(CETWM.windows, "windows")
     showWindow(name)
@@ -219,6 +223,7 @@ local function lockWindowLoop()
             end
             ImGui.End()
         end
+
         ::continue::
     end
 end
@@ -460,10 +465,14 @@ registerForEvent('onInit', function()
 
     settingsInst = settings:getInstance()
     localizationInst = localizationService:getInstance()
+    if not localizationInst then
+        logger:error("ERROR: Window Manager failed to intilize localization service!")
+        return
+    end
     CETWM.ready = true
     CETWM.windows = settingsInst.windows
     initWindowManagerWindows()
-    logger:info("Window Manager fully intilized!")
+    logger:info(localizationInst.localization_strings.finalInit)
 end)
 
 registerForEvent("onOverlayOpen", function()

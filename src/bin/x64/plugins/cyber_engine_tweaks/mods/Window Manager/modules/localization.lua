@@ -1,5 +1,5 @@
 
-local settingsService = require("modules/jsonUtils")
+local settingsService = require("modules/settings")
 local utils = require("modules/utils")
 local logger = require("modules/logger")
 
@@ -23,16 +23,23 @@ local localizationServiceInst
 ---@return table 
 local function list_files()
     local files = {}
-
-    for _, file in pairs(dir(localization_dir)) do
+    local success, dir_files = pcall(function()
+        return dir(localization_dir)
+    end)
+    if not success then
+        logger:error("ERROR: Window Manager could not list localization files!")
+        return files
+    end
+    for _, file in pairs(dir_files) do
         table.insert(files, utils.remove_extension(file.name))
     end
     return files
 end
 
----@param filename string
+---@param self localizationService
 ---@return table | nil
-local function processLocalization(filename)
+local function processLocalization(self)
+    local filename = self.localization
     local en_us_locale = require(localization_dir .. "en-us.lua")
     if en_us_locale == nil then 
         logger:error("ERROR: Window Manager could not find en-us localization file!")
@@ -76,18 +83,20 @@ end
 
 ---@return void 
 function localizationService:refreshLocalization()
-    local temp_localization = processLocalization(self.localization)
-    if temp_localization == nil then
-        logger:error("ERROR: Window Manager failed to refresh localization!")
+    local temp_localization = processLocalization(self)
+    if temp_localization then
+        self.localization_strings = temp_localization
+    else
+        logger:error(self.localization_strings.errFailedRefreshLocalization)
         return
     end
-    self.localization_strings = temp_localization
     local temp_all_localizations = list_files()
-    if temp_all_localizations == nil then
-        logger:error("ERROR: Window Manager failed to refresh list of localizations!")
+    if temp_all_localizations then
+        self.all_localizations = temp_all_localizations
+    else
+        logger:error(self.localization_strings.errFailedGettingAllLocalizations)
         return
     end
-    self.all_localizations = temp_all_localizations
 end
 
 ---@param language string
@@ -102,14 +111,14 @@ end
 
 ---@return localizationService | nil | bool
 local function init(self)
-    settingsInst = settingsService.getInstance()
+    settingsInst = settingsService:getInstance()
     if settingsInst == nil then
         logger:error("ERROR: Window Manager failed to initialize settings in localization service!")
         return
     end
     self.localization = settingsInst.settings.localization
     self.all_localizations = list_files()
-    self.localization_strings = processLocalization(self.localization)
+    self.localization_strings = processLocalization(self)
     if self.localization_strings == nil then
         return false
     end
@@ -129,11 +138,3 @@ end
 
 
 return localizationService
---[[
-TODO: 
-Add setLocalization method,
-refresh localization directory
-testing, 
-
-
-]]
