@@ -46,6 +46,9 @@ local requestWindowPos = false
 local requestedNameSwitch = ''
 local requestedLanguageSwitch = ''
 
+local dragging_index = nil
+local drag_offset_y = 0
+
 ---@return boolean
 local function checkPackages()
     local hasError = false
@@ -353,7 +356,15 @@ local function manageWindowsTab()
     CETWM.minWidth = utils.longestStringLenghtPX(CETWM.windows)
     local sortedWindows = utils.sortTable(CETWM.windows)
 
-    for _, window in ipairs(sortedWindows) do
+    local topY
+    local itemHeight
+
+
+    for i, window in ipairs(sortedWindows) do
+        ImGui.PushID(i)
+
+        ImGui.BeginGroup()
+
         local name = window.name
         local state = window.state
 
@@ -387,7 +398,60 @@ local function manageWindowsTab()
                 end
             end
         end
-        ImGui.PopStyleColor(3) 
+        ImGui.PopStyleColor(3)
+
+        ImGui.EndGroup()
+
+        -- Get the bounding box of the item
+        local item_x1, item_y1 = ImGui.GetItemRectMin()
+        local item_x2, item_y2 = ImGui.GetItemRectMax()
+        local item_height = item_y2 - item_y1
+        item_height = item_height + ImGui.GetStyle().ItemSpacing.y
+        
+        topY = topY or item_y1
+        itemHeight = itemHeight or item_height
+
+        -- Start dragging
+        if ImGui.IsItemActive() and ImGui.IsMouseDragging(0) then
+            spdlog.debug("Dragging window: " .. name)
+            if not dragging_index then
+                dragging_index = i
+                local mouse_x, mouse_y = ImGui.GetMousePos()
+                drag_offset_y = mouse_y - item_y1
+            end
+        end
+
+        ImGui.PopID()
+    end
+
+    -- Handle drop
+    if dragging_index and not ImGui.IsMouseDragging(0) then
+        local insert_index = nil
+
+        spdlog.debug("Dropping window: " .. sortedWindows[dragging_index].name)
+
+        local mouse_x, mouse_y = ImGui.GetMousePos()
+        insert_index = math.floor(((mouse_y - topY) / itemHeight) + 0.5) + 1
+
+        if insert_index < 1 then
+            insert_index = 1
+        elseif insert_index > utils.tableLength(sortedWindows) then
+            insert_index = utils.tableLength(sortedWindows)
+        end
+
+        if insert_index then
+            local dragged_item = table.remove(sortedWindows, dragging_index)
+            table.insert(sortedWindows, insert_index, dragged_item)
+
+            for i, window in ipairs(sortedWindows) do
+                CETWM.windows[window.name].index = i
+            end
+        end
+
+        settingsInst:update(CETWM.windows, "windows")
+
+        spdlog.debug("Dropped window: " .. sortedWindows[dragging_index].name .. " at index: " .. (insert_index or "nil"))
+        dragging_index = nil
     end
 end
 
