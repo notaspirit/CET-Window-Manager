@@ -59,7 +59,7 @@ local function init(self)
     local savedSettings = loadSettings()
     if not savedSettings then
         self.windows = {}
-        self.settings = {localization = "en-us", hide_disclaimer = false}
+        self.settings = {localization = "en-us", hide_disclaimer = false, hideUnomitedWindows = false}
         return
     end
     if savedSettings.windows then
@@ -73,6 +73,9 @@ local function init(self)
         end
         if savedSettings.settings.hide_disclaimer == nil then
             savedSettings.settings.hide_disclaimer = false
+        end
+        if savedSettings.settings.hideUnomitedWindows == nil then
+            savedSettings.settings.hideUnomitedWindows = false
         end
         self.settings = savedSettings.settings
     else
