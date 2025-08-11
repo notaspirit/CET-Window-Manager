@@ -47,7 +47,6 @@ local requestedNameSwitch = ''
 local requestedLanguageSwitch = ''
 
 local dragging_index = nil
-local drag_offset_y = 0
 
 ---@return boolean
 local function checkPackages()
@@ -166,46 +165,6 @@ local function toggleLockProcessPt2Process(name)
     settingsInst:update(CETWM.windows, "windows")
 end
 
----@param name string
----@param direction int
----@return void
-local function changeWindowIndex(name, direction)
-    local currentIndex = CETWM.windows[name].index
-    local newIndex = currentIndex + direction
-
-    if newIndex < 1 or newIndex > utils.tableLength(CETWM.windows) then
-        return 
-    end
-
-    local sortedWindows = {}
-    for windowName, state in pairs(CETWM.windows) do
-        table.insert(sortedWindows, {name = windowName, state = state})
-    end
-
-    table.sort(sortedWindows, function(a, b)
-        return a.state.index < b.state.index
-    end)
-
-    local currentPosition, newPosition
-    for i, window in ipairs(sortedWindows) do
-        if window.name == name then
-            currentPosition = i
-        end
-        if window.state.index == newIndex then
-            newPosition = i
-        end
-    end
-
-    if currentPosition and newPosition then
-        sortedWindows[currentPosition], sortedWindows[newPosition] = sortedWindows[newPosition], sortedWindows[currentPosition]
-        for i, window in ipairs(sortedWindows) do
-            CETWM.windows[window.name].index = i
-        end
-    end
-
-    settingsInst:update(CETWM.windows, "windows")
-end
-
 ---@return void
 local function lockWindowLoop()
     for name, state in pairs(CETWM.windows) do
@@ -294,64 +253,6 @@ local function processDeferred()
 end
 
 ---@return void
-local function addWindowTab()
-    if not settingsInst.settings.hide_disclaimer then
-        ImGui.TextWrapped(localizationInst.localization_strings.disclaimerSettings)
-        ImGui.Separator()
-    end
-    if ImGui.Button(localizationInst.localization_strings.addWindow) then
-        ImGui.OpenPopup("Add Window")
-    end
-    if ImGui.BeginPopup("Add Window") then
-        local text_input_active = false
-        windowName, text_input_active =  ImGui.InputText("##WindowNameInPopup", windowName, 100, ImGuiInputTextFlags.EnterReturnsTrue)
-        if text_input_active then
-            addWindowName()
-        end
-        if ImGui.Button(localizationInst.localization_strings.add) then
-            addWindowName()
-        end
-        ImGui.SameLine()
-        if ImGui.Button(localizationInst.localization_strings.close) then
-            ImGui.CloseCurrentPopup()
-        end
-        ImGui.SameLine()
-        ImGui.Text(popUpBannedText)
-        ImGui.EndPopup()
-    end
-        
-    local sortedWindows = utils.sortTable(CETWM.windows)
-
-    for _, window in ipairs(sortedWindows) do
-        local name = window.name
-        local state = window.state
-
-        if ImGui.Button(IconGlyphs.ArrowUp .. "##" .. name) then
-            changeWindowIndex(name, -1)
-        end
-
-        ImGui.SameLine()
-        if ImGui.Button(IconGlyphs.ArrowDown .. "##" .. name) then
-            changeWindowIndex(name, 1)
-        end
-
-        ImGui.SameLine()
-        if ImGui.Button(IconGlyphs.Close .. "##" .. name) then
-            if not (name == localizationInst.localization_strings.modName) then
-                showWindow(name)
-                table.insert(deferredRemoval, name)
-            end
-        end
-        ImGui.SameLine()
-        if ImGui.Button(IconGlyphs.Cached .. "##" .. name) then
-            resetWindow(name)
-        end
-        ImGui.SameLine()
-        ImGui.Text(name:match("([^#]+)"))
-    end 
-end
-
----@return void
 local function manageWindowsTab()
     CETWM.minWidth = utils.longestStringLenghtPX(CETWM.windows)
     local sortedWindows = utils.sortTable(CETWM.windows)
@@ -400,6 +301,13 @@ local function manageWindowsTab()
         end
         ImGui.PopStyleColor(3)
 
+        if (ImGui.BeginPopupContextItem("Window Context Menu##" .. window.name, ImGuiPopupFlags.MouseButtonRight)) then
+            ImGui.Text(string.match(name, "^(.-)##") or name)
+            if ImGui.Button(IconGlyphs.Cached .. localizationInst.localization_strings.resetWindow .. "##" .. window.name) then
+                resetWindow(window.name)
+            end
+            ImGui.EndPopup()
+        end
         ImGui.EndGroup()
 
         -- Get the bounding box of the item
@@ -413,7 +321,6 @@ local function manageWindowsTab()
 
         -- Start dragging
         if ImGui.IsItemActive() and ImGui.IsMouseDragging(0) then
-            spdlog.debug("Dragging window: " .. name)
             if not dragging_index then
                 dragging_index = i
                 local mouse_x, mouse_y = ImGui.GetMousePos()
@@ -427,9 +334,6 @@ local function manageWindowsTab()
     -- Handle drop
     if dragging_index and not ImGui.IsMouseDragging(0) then
         local insert_index = nil
-
-        spdlog.debug("Dropping window: " .. sortedWindows[dragging_index].name)
-
         local mouse_x, mouse_y = ImGui.GetMousePos()
         insert_index = math.floor(((mouse_y - topY) / itemHeight) + 0.5) + 1
 
@@ -449,8 +353,6 @@ local function manageWindowsTab()
         end
 
         settingsInst:update(CETWM.windows, "windows")
-
-        spdlog.debug("Dropped window: " .. sortedWindows[dragging_index].name .. " at index: " .. (insert_index or "nil"))
         dragging_index = nil
     end
 end
@@ -473,18 +375,6 @@ end
 
 ---@return void
 local function modSettingsTab()
-    if settingsInst.settings.hide_disclaimer then
-        styles.button_styled_light()
-    else
-        styles.button_styled_dark()
-    end
-    if ImGui.Button(localizationInst.localization_strings.hideDisclaimer) then
-        local temp_settings = settingsInst.settings
-        temp_settings.hide_disclaimer = not temp_settings.hide_disclaimer
-        settingsInst:update(temp_settings, "settings")
-    end
-    ImGui.PopStyleColor(3)
-
     if ImGui.BeginMenu(localizationInst.localization_strings.localization) then
         for _, language in ipairs(localizationInst.all_localizations) do
             if ImGui.Selectable(language) then
@@ -502,21 +392,6 @@ local function modSettingsTab()
     ImGui.Text(localizationInst.localization_strings.version .. ": " .. version)
     ImGui.SameLine()
     ImGui.Text(localizationInst.localization_strings.by .. ": sprt_")
-end
-
----@return void
-local function settingsTab()
-    if ImGui.BeginTabBar("TabListSettings") then
-        if ImGui.BeginTabItem(localizationInst.localization_strings.tabWindows) then
-            addWindowTab()
-            ImGui.EndTabItem()
-        end
-        if ImGui.BeginTabItem(localizationInst.localization_strings.tabMod) then
-            modSettingsTab()
-            ImGui.EndTabItem()
-        end
-        ImGui.EndTabBar()
-    end
 end
 
 
@@ -573,7 +448,7 @@ registerForEvent("onDraw", function()
                 ImGui.EndTabItem()
             end
             if ImGui.BeginTabItem(localizationInst.localization_strings.tabSettings) then
-                settingsTab()
+                modSettingsTab()
                 ImGui.EndTabItem()
             end
             ImGui.EndTabBar()
