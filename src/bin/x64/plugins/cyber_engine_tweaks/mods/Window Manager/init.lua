@@ -255,7 +255,7 @@ local function processDeferred()
 end
 
 ---@return void
-local function manageWindowsTab()
+local function drawUnomittedWindows()
     CETWM.minWidth = utils.longestStringLenghtPX(CETWM.windows)
     local sortedWindows = utils.sortTable(CETWM.windows)
 
@@ -266,6 +266,123 @@ local function manageWindowsTab()
         end
     end
 
+    local topY
+    local itemHeight
+
+    for i, window in ipairs(onlyUnomitedWindows) do
+        ImGui.PushID(i)
+
+        ImGui.BeginGroup()
+
+        local name = window.name
+        local state = window.state
+
+        if state.locked then
+            styles.button_styled_light()
+        else
+            styles.button_styled_dark()
+        end
+
+
+        if ImGui.Button(string.format("%s##%s", (state.locked and IconGlyphs.Lock or IconGlyphs.LockOpenVariant), name)) then
+            toggleLock(name)
+        end
+
+        -- Get the bounding box of the item
+        local sideButtonX1, sideButtonY1 = ImGui.GetItemRectMin()
+        local sideButtonX2, sideButtonY2 = ImGui.GetItemRectMax()
+        sideButtonWidth = (sideButtonX2 - sideButtonX1) + ImGui.GetStyle().ItemSpacing.x
+
+        ImGui.PopStyleColor(3)
+        ImGui.SameLine()
+
+        if state.visible then
+            styles.button_styled_light()
+        else
+            styles.button_styled_dark()
+        end
+        
+        if ImGui.Button(name, CETWM.minWidth, 0) then
+            if not (name == localizationInst.localization_strings.modName) then
+                state.visible = not state.visible 
+                settingsInst:update(CETWM.windows, "windows")
+                if not state.visible then
+                    hideWindow(name)
+                else 
+                    showWindow(name)
+                end
+            end
+        end
+        ImGui.PopStyleColor(3)
+
+        if (ImGui.BeginPopupContextItem("Window Context Menu##" .. window.name, ImGuiPopupFlags.MouseButtonRight)) then
+            ImGui.Text(string.match(name, "^(.-)##") or name)
+            if ImGui.Button(IconGlyphs.Cached .. localizationInst.localization_strings.resetWindow .. "##" .. window.name) then
+                resetWindow(window.name)
+            end
+
+            if (not (window.name == localizationInst.localization_strings.modName)) then
+                if ImGui.Button(IconGlyphs.EyeOff .. localizationInst.localization_strings.omit .. "##" .. window.name) then
+                    CETWM.windows[window.name].disabled = true
+                    settingsInst:update(CETWM.windows, "windows")
+                end 
+            end
+
+            ImGui.EndPopup()
+        end
+        ImGui.EndGroup()
+
+        -- Get the bounding box of the item
+        local item_x1, item_y1 = ImGui.GetItemRectMin()
+        local item_x2, item_y2 = ImGui.GetItemRectMax()
+        local item_height = item_y2 - item_y1
+        item_height = item_height + ImGui.GetStyle().ItemSpacing.y
+        
+        topY = topY or item_y1
+        itemHeight = itemHeight or item_height
+
+        -- Start dragging
+        if ImGui.IsItemActive() and ImGui.IsMouseDragging(0) then
+            if not dragging_index then
+                dragging_index = i
+            end
+        end
+
+        ImGui.PopID()
+    end
+
+    -- Handle drop
+    if dragging_index and not ImGui.IsMouseDragging(0) then
+        local insert_index = nil
+        local mouse_x, mouse_y = ImGui.GetMousePos()
+        insert_index = math.floor(((mouse_y - topY) / itemHeight) + 0.5) + 1
+
+        if insert_index < 1 then
+            insert_index = 1
+        elseif insert_index > utils.tableLength(onlyUnomitedWindows) then
+            insert_index = utils.tableLength(onlyUnomitedWindows)
+        end
+
+        if insert_index then
+            local dragged_item = table.remove(onlyUnomitedWindows, dragging_index)
+            table.insert(onlyUnomitedWindows, insert_index, dragged_item)
+
+            for i, window in ipairs(onlyUnomitedWindows) do
+                CETWM.windows[window.name].index = i
+            end
+        end
+
+        settingsInst:update(CETWM.windows, "windows")
+        dragging_index = nil
+    end
+
+end
+
+---@return void
+local function drawOmittedWindows()
+    CETWM.minWidth = utils.longestStringLenghtPX(CETWM.windows)
+    local sortedWindows = utils.sortTable(CETWM.windows)
+
     local onlyOmitedWindows = {}
     for _, window in ipairs(sortedWindows) do
         if window.state.disabled then
@@ -273,123 +390,7 @@ local function manageWindowsTab()
         end
     end
 
-    local topY
-    local itemHeight
-
-    if ImGui.Button((settingsInst.settings.hideUnomitedWindows and localizationInst.localization_strings.showUnomittedWindows or localizationInst.localization_strings.showOmittedWindows),(CETWM.minWidth + sideButtonWidth), 0) then
-        settingsInst.settings.hideUnomitedWindows = not settingsInst.settings.hideUnomitedWindows
-        settingsInst:update(settingsInst.settings, "settings")
-    end
-
-    if (not settingsInst.settings.hideUnomitedWindows) then
-        for i, window in ipairs(onlyUnomitedWindows) do
-            ImGui.PushID(i)
-
-            ImGui.BeginGroup()
-
-            local name = window.name
-            local state = window.state
-
-            if state.locked then
-                styles.button_styled_light()
-            else
-                styles.button_styled_dark()
-            end
-
-
-            if ImGui.Button(string.format("%s##%s", (state.locked and IconGlyphs.Lock or IconGlyphs.LockOpenVariant), name)) then
-                toggleLock(name)
-            end
-
-            -- Get the bounding box of the item
-            local sideButtonX1, sideButtonY1 = ImGui.GetItemRectMin()
-            local sideButtonX2, sideButtonY2 = ImGui.GetItemRectMax()
-            sideButtonWidth = (sideButtonX2 - sideButtonX1) + ImGui.GetStyle().ItemSpacing.x
-
-            ImGui.PopStyleColor(3)
-            ImGui.SameLine()
-
-            if state.visible then
-                styles.button_styled_light()
-            else
-                styles.button_styled_dark()
-            end
-            
-            if ImGui.Button(name, CETWM.minWidth, 0) then
-                if not (name == localizationInst.localization_strings.modName) then
-                    state.visible = not state.visible 
-                    settingsInst:update(CETWM.windows, "windows")
-                    if not state.visible then
-                        hideWindow(name)
-                    else 
-                        showWindow(name)
-                    end
-                end
-            end
-            ImGui.PopStyleColor(3)
-
-            if (ImGui.BeginPopupContextItem("Window Context Menu##" .. window.name, ImGuiPopupFlags.MouseButtonRight)) then
-                ImGui.Text(string.match(name, "^(.-)##") or name)
-                if ImGui.Button(IconGlyphs.Cached .. localizationInst.localization_strings.resetWindow .. "##" .. window.name) then
-                    resetWindow(window.name)
-                end
-
-                if ImGui.Button(IconGlyphs.EyeOff .. localizationInst.localization_strings.omit .. "##" .. window.name) then
-                    CETWM.windows[window.name].disabled = true
-                    settingsInst:update(CETWM.windows, "windows")
-                end
-
-                ImGui.EndPopup()
-            end
-            ImGui.EndGroup()
-
-            -- Get the bounding box of the item
-            local item_x1, item_y1 = ImGui.GetItemRectMin()
-            local item_x2, item_y2 = ImGui.GetItemRectMax()
-            local item_height = item_y2 - item_y1
-            item_height = item_height + ImGui.GetStyle().ItemSpacing.y
-            
-            topY = topY or item_y1
-            itemHeight = itemHeight or item_height
-
-            -- Start dragging
-            if ImGui.IsItemActive() and ImGui.IsMouseDragging(0) then
-                if not dragging_index then
-                    dragging_index = i
-                    local mouse_x, mouse_y = ImGui.GetMousePos()
-                    drag_offset_y = mouse_y - item_y1
-                end
-            end
-
-            ImGui.PopID()
-        end
-
-        -- Handle drop
-        if dragging_index and not ImGui.IsMouseDragging(0) then
-            local insert_index = nil
-            local mouse_x, mouse_y = ImGui.GetMousePos()
-            insert_index = math.floor(((mouse_y - topY) / itemHeight) + 0.5) + 1
-
-            if insert_index < 1 then
-                insert_index = 1
-            elseif insert_index > utils.tableLength(onlyUnomitedWindows) then
-                insert_index = utils.tableLength(onlyUnomitedWindows)
-            end
-
-            if insert_index then
-                local dragged_item = table.remove(onlyUnomitedWindows, dragging_index)
-                table.insert(onlyUnomitedWindows, insert_index, dragged_item)
-
-                for i, window in ipairs(onlyUnomitedWindows) do
-                    CETWM.windows[window.name].index = i
-                end
-            end
-
-            settingsInst:update(CETWM.windows, "windows")
-            dragging_index = nil
-        end
-    else
-        for i, window in ipairs(onlyOmitedWindows) do
+    for i, window in ipairs(onlyOmitedWindows) do
             styles.button_styled_dark()
             ImGui.Button(window.name, (CETWM.minWidth + sideButtonWidth), 0)
             ImGui.PopStyleColor(3)
@@ -403,6 +404,20 @@ local function manageWindowsTab()
                 ImGui.EndPopup()
             end
         end
+end
+
+---@return void
+local function manageWindowsTab()
+    if ImGui.BeginTabBar("WindowManagerTabBar") then
+        if ImGui.BeginTabItem(localizationInst.localization_strings.UnomittedWindows) then
+            drawUnomittedWindows()
+            ImGui.EndTabItem()
+        end
+        if ImGui.BeginTabItem(localizationInst.localization_strings.OmittedWindows) then
+            drawOmittedWindows()
+            ImGui.EndTabItem()
+        end
+        ImGui.EndTabBar()
     end
 end
 
