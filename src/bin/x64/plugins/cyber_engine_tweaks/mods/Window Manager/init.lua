@@ -50,6 +50,8 @@ local dragging_index = nil
 
 local sideButtonWidth = 0
 
+local framesToWaitBeforeLoading = 5
+
 ---@return boolean
 local function checkPackages()
     local hasError = false
@@ -254,6 +256,76 @@ local function processDeferred()
     deferredRemoval = {}
 end
 
+---@return void 
+local function loadWindowsFromFile()
+    if not RedCetWM then
+        logger:error("ERROR: RedCetWM is not available, cannot load windows from file!")
+        return
+    end
+
+    local layoutstring = RedCetWM.GetWindowLayout()
+    if not layoutstring or layoutstring == "" then
+        logger:info("No window layout found, skipping load.")
+        return
+    end
+
+    local layoutLines = {}
+    for line in layoutstring:gmatch("[^\n]+") do
+        table.insert(layoutLines, line)
+    end
+    local addedWindows = false;
+    for i, line in ipairs(layoutLines) do
+        if not (line:find("[Window]", 1, true) == 1) then
+            goto continue1
+        end
+        local name = line:match("%[Window%]%[(.-)%]")
+        
+        if CETWM.windows[name] then
+            goto continue1
+        end
+
+        local posX, posY = layoutLines[i + 1]:match("Pos=(%d+),(%d+)")
+        local sizeX, sizeY = layoutLines[i + 2]:match("Size=(%d+),(%d+)")
+        local collapsed = layoutLines[i + 3]:match("Collapsed=(%d+)")
+
+        if not posX then
+            posX = "100"
+        end
+
+        if not posY then
+            posY = "100"
+        end
+
+        if not sizeX then
+            sizeX = "200"
+        end
+
+        if not sizeY then
+            sizeY = "200"
+        end
+
+        if not collapsed then
+            collapsed = "0"
+        end
+
+        CETWM.windows[name] = {
+            visible = true,
+            lastPos = {x = tonumber(posX), y = tonumber(posY)},
+            isCollapsed = (collapsed == "1"),
+            index = 1,
+            locked = false,
+            lastSize = {tonumber(sizeX), tonumber(sizeY)},
+            disabled = false
+        }
+        addedWindows = true
+        ::continue1::
+    end
+
+    if addedWindows then
+        settingsInst:update(CETWM.windows, "windows")
+    end
+end
+
 ---@return void
 local function drawUnomittedWindows()
     CETWM.minWidth = utils.longestStringLenghtPX(CETWM.windows)
@@ -439,6 +511,10 @@ end
 
 ---@return void
 local function modSettingsTab()
+    if ImGui.Button(localizationInst.localization_strings.loadWindows) then
+        loadWindowsFromFile();
+    end
+
     if ImGui.BeginMenu(localizationInst.localization_strings.localization) then
         for _, language in ipairs(localizationInst.all_localizations) do
             if ImGui.Selectable(language) then
@@ -457,6 +533,7 @@ local function modSettingsTab()
     ImGui.SameLine()
     ImGui.Text(localizationInst.localization_strings.by .. ": sprt_")
 end
+
 
 
 registerForEvent('onInit', function() 
@@ -489,6 +566,13 @@ end)
 registerForEvent("onDraw", function()
     if not CETWM.overlayOpen then return end
     if not CETWM.ready then return end
+
+    if framesToWaitBeforeLoading >= 0 then
+        framesToWaitBeforeLoading = framesToWaitBeforeLoading - 1
+        if framesToWaitBeforeLoading == 0 then
+            loadWindowsFromFile()
+        end
+    end
 
     local WMFlags = bit32.bor(ImGuiWindowFlags.AlwaysAutoResize, ImGuiWindowFlags.NoScrollbar)
     if ImGui.Begin(localizationInst.localization_strings.modName, true, WMFlags) then

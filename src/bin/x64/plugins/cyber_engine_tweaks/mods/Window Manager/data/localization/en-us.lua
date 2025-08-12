@@ -10,6 +10,7 @@ return {
     unomit = "Unomit",
     UnomittedWindows = "Unomitted Windows",
     OmittedWindows = "Omitted Windows",
+    loadWindows = "Load Windows",
     localization = "Language",
     version = "Version",
     by = "By",
