@@ -36,16 +36,25 @@ local function adjustWindowName(inputName)
     return window_lookup.window_name_lookup[displayName] or displayName
 end
 
+---@return string
+---@param name string
+local function getWindowDisplayName(name)
+    return name:gsub("##", "\r#\r#\r")
+end
 
 ---@param windowTable table
-local function longestStringLengthPx(windowTable)
+local function longestStringLengthPx(windowTable, disabled)
     local maxLength = 0
     for name, state in pairs(windowTable) do
-        local displayName = name:match("([^#]+)")
+        if not (disabled == state.disabled) then
+            goto contine2
+        end
+        local displayName = getWindowDisplayName(name)
         local instanceLength = ImGui.CalcTextSize(displayName)
         if instanceLength > maxLength then
             maxLength = instanceLength
         end
+        ::contine2::
     end
     return maxLength + 10
 end
@@ -59,6 +68,17 @@ local function sortTable(tableInput)
     end
     -- Sort the windows based on the index
     table.sort(sortedWindows, function(a, b) return a.state.index < b.state.index end)
+    return sortedWindows
+end
+
+local function sortTableByName(tableInput)
+    -- Create a temporary table to sort windows by name
+    local sortedWindows = {}
+    for name, state in pairs(tableInput) do
+        table.insert(sortedWindows, {name = name, state = state})
+    end
+    -- Sort the windows based on the name
+    table.sort(sortedWindows, function(a, b) return a.name < b.name end)
     return sortedWindows
 end
 
@@ -87,8 +107,10 @@ local utils = {
     adjustWindowName = adjustWindowName,
     longestStringLenghtPX = longestStringLengthPx,
     sortTable = sortTable,
+    sortTableByName = sortTableByName,
     remove_extension = remove_extension,
-    deepCopy = deepCopy
+    deepCopy = deepCopy,
+    getWindowDisplayName = getWindowDisplayName
 }
 
 return utils

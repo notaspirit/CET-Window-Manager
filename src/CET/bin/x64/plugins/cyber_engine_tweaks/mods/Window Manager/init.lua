@@ -207,28 +207,6 @@ local function removeWindowProcessing(name)
 end
 
 ---@return void
-local function addWindowName()
-    local adjustedWindowName = utils.adjustWindowName(windowName)
-    if not (CETWM.windows[adjustedWindowName] == nil) then
-        popUpBannedText = string.format("%s %s", windowName, localizationInst.localization_strings.alreadyManaged)
-        return
-    end
-
-    if utils.isBanned(windowName) then
-        popUpBannedText = string.format("%s %s", windowName, localizationInst.localization_strings.disallowedName)
-        return
-    end
-
-    local newIndex = utils.tableLength(CETWM.windows) + 1
-    CETWM.windows[utils.adjustWindowName(adjustedWindowName)] = {visible = true, lastPos = {x = 100, y = 100}, isCollapsed = false, index = newIndex, locked = false}
-    settingsInst:update(CETWM.windows, "windows")
-    popUpBannedText = ""
-    windowName = ""
-    ImGui.CloseCurrentPopup()
-end
-
-
----@return void
 local function processDeferred()
     for _, name in ipairs(deferredHide) do
         hideWindowProcess(name)
@@ -328,7 +306,7 @@ end
 
 ---@return void
 local function drawUnomittedWindows()
-    CETWM.minWidth = utils.longestStringLenghtPX(CETWM.windows)
+    CETWM.minWidth = utils.longestStringLenghtPX(CETWM.windows, false)
     local sortedWindows = utils.sortTable(CETWM.windows)
 
     local onlyUnomitedWindows = {}
@@ -374,7 +352,7 @@ local function drawUnomittedWindows()
             styles.button_styled_dark()
         end
         
-        if ImGui.Button(name, CETWM.minWidth, 0) then
+        if ImGui.Button(utils.getWindowDisplayName(window.name), CETWM.minWidth, 0) then
             if not (name == localizationInst.localization_strings.modName) then
                 state.visible = not state.visible 
                 settingsInst:update(CETWM.windows, "windows")
@@ -388,14 +366,16 @@ local function drawUnomittedWindows()
         ImGui.PopStyleColor(3)
 
         if (ImGui.BeginPopupContextItem("Window Context Menu##" .. window.name, ImGuiPopupFlags.MouseButtonRight)) then
-            ImGui.Text(string.match(name, "^(.-)##") or name)
-            if ImGui.Button(IconGlyphs.Cached .. localizationInst.localization_strings.resetWindow .. "##" .. window.name) then
+            ImGui.Text(utils.getWindowDisplayName(window.name))
+            if ImGui.Button(IconGlyphs.Cached .. localizationInst.localization_strings.resetWindow .. "##" .. utils.getWindowDisplayName(window.name)) then
                 resetWindow(window.name)
             end
 
             if (not (window.name == localizationInst.localization_strings.modName)) then
-                if ImGui.Button(IconGlyphs.EyeOff .. localizationInst.localization_strings.omit .. "##" .. window.name) then
+                if ImGui.Button(IconGlyphs.EyeOff .. localizationInst.localization_strings.omit .. "##" .. utils.getWindowDisplayName(window.name)) then
+                    logger:info("Omitting window: " .. window.name)
                     CETWM.windows[window.name].disabled = true
+                    logger:info(tostring(CETWM.windows[window.name]))
                     settingsInst:update(CETWM.windows, "windows")
                 end 
             end
@@ -452,8 +432,8 @@ end
 
 ---@return void
 local function drawOmittedWindows()
-    CETWM.minWidth = utils.longestStringLenghtPX(CETWM.windows)
-    local sortedWindows = utils.sortTable(CETWM.windows)
+    CETWM.minWidth = utils.longestStringLenghtPX(CETWM.windows, true)
+    local sortedWindows = utils.sortTableByName(CETWM.windows)
 
     local onlyOmitedWindows = {}
     for _, window in ipairs(sortedWindows) do
@@ -463,19 +443,19 @@ local function drawOmittedWindows()
     end
 
     for i, window in ipairs(onlyOmitedWindows) do
-            styles.button_styled_dark()
-            ImGui.Button(window.name, (CETWM.minWidth + sideButtonWidth), 0)
-            ImGui.PopStyleColor(3)
+        styles.button_styled_dark()
+        ImGui.Button(utils.getWindowDisplayName(window.name), CETWM.minWidth, 0)
+        ImGui.PopStyleColor(3)
 
-            if (ImGui.BeginPopupContextItem("Window Context Menu##" .. window.name, ImGuiPopupFlags.MouseButtonRight)) then
-                ImGui.Text(string.match(window.name, "^(.-)##") or window.name)
-                if ImGui.Button(IconGlyphs.Eye .. localizationInst.localization_strings.unomit .. "##" .. window.name) then
-                    CETWM.windows[window.name].disabled = false
-                    settingsInst:update(CETWM.windows, "windows")
-                end
-                ImGui.EndPopup()
+        if (ImGui.BeginPopupContextItem("Window Context Menu##" .. utils.getWindowDisplayName(window.name), ImGuiPopupFlags.MouseButtonRight)) then
+            ImGui.Text(utils.getWindowDisplayName(window.name))
+            if ImGui.Button(IconGlyphs.Eye .. localizationInst.localization_strings.unomit .. "##" .. utils.getWindowDisplayName(window.name)) then
+                CETWM.windows[window.name].disabled = false
+                settingsInst:update(CETWM.windows, "windows")
             end
+            ImGui.EndPopup()
         end
+    end
 end
 
 ---@return void
