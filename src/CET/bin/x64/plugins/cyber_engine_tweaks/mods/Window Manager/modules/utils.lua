@@ -1,7 +1,3 @@
-
-local window_lookup = require("data/window_lookup")
-
-
 ---@param table table
 ---@param value any
 local function isInTable(table, value)
@@ -13,14 +9,6 @@ local function isInTable(table, value)
     return false
 end
 
----@param input string 
-local function isBanned(input)
-    if isInTable(window_lookup.window_blacklist, input) then
-        return true
-    end
-    return false
-end
-
 ---@param input table
 local function tableLength(input)
     local count = 0
@@ -28,12 +16,6 @@ local function tableLength(input)
         count = count + 1
     end 
     return count
-end
-
----@param inputName string
-local function adjustWindowName(inputName)
-    local displayName = inputName:match("^%s*(.-)%s*$")
-    return window_lookup.window_name_lookup[displayName] or displayName
 end
 
 ---@return string
@@ -101,10 +83,8 @@ local function deepCopy(tableInput)
 end
 
 local utils = {
-    isBanned = isBanned,
     isInTable = isInTable,
     tableLength = tableLength,
-    adjustWindowName = adjustWindowName,
     longestStringLenghtPX = longestStringLengthPx,
     sortTable = sortTable,
     sortTableByName = sortTableByName,
