@@ -17,7 +17,7 @@ local function modSettingsTab()
                 if language == CETWM.settingsInst.settings.localization then
                     goto continue
                 end
-                CETWM.requestSwitchWindowName(CETWM.localizationInst.localization_strings.modName)
+                windowManager.requestSwitchWindowName(CETWM.localizationInst.localization_strings.modName)
                 CETWM.requestedLanguageSwitch = language
                 ::continue::
             end
@@ -95,9 +95,7 @@ local function drawUnomittedWindows()
 
             if (not (window.name == CETWM.localizationInst.localization_strings.modName)) then
                 if ImGui.Button(IconGlyphs.EyeOff .. CETWM.localizationInst.localization_strings.omit .. "##" .. utils.getWindowDisplayName(window.name)) then
-                    logger:info("Omitting window: " .. window.name)
                     CETWM.windows[window.name].disabled = true
-                    logger:info(tostring(CETWM.windows[window.name]))
                     CETWM.settingsInst:update(CETWM.windows, "windows")
                 end 
             end
