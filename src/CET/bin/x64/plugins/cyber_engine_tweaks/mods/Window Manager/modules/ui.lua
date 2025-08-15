@@ -228,6 +228,16 @@ local function drawUI()
     end
 end
 
+---@return void 
+local function drawFailedInitUI()
+    local WMFlags = bit32.bor(ImGuiWindowFlags.AlwaysAutoResize, ImGuiWindowFlags.NoScrollbar)
+    if ImGui.Begin(CETWM.localizationInst.localization_strings.modName, true, WMFlags) then
+        ImGui.Text(CETWM.localizationInst.localization_strings.failedToLoadRedCetWM)
+        ImGui.End()
+    end
+end
+
 return {
-    drawUI = drawUI
+    drawUI = drawUI,
+    drawFailedInitUI = drawFailedInitUI,
 }

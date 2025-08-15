@@ -16,6 +16,7 @@ return {
     by = "By",
     finalInit = "Window Manager finished intilizing!",
     errFailedRefreshLocalization = "ERROR: Window Manager failed to refresh localization!",
-    errFailedGettingAllLocalizations = "ERROR: Window Manager failed to refresh list of localizations!"
+    errFailedGettingAllLocalizations = "ERROR: Window Manager failed to refresh list of localizations!",
+    failedToLoadRedCetWM = "ERROR: Window Manager failed to load RedCetWM, ensure you have Red4Ext installed!",
 }
 

@@ -25,6 +25,7 @@ local ui = require('modules/ui')
 CETWM = {
     version = "2.0.0",
     ready = false,
+    failedToLoad = false,
     windows = {}, -- Store window states: {name = {visible = bool, lastPos = {x,y}, isCollapsed = bool, index = int, locked = bool, lastSize = {x,y}, disabled = bool}}
     -- this table now acts are the "working" or temp dir that then gets merged into the settingService and saved
     overlayOpen = false,
@@ -49,30 +50,6 @@ local localizationInst
 
 local framesToWaitBeforeLoading = 5
 
----@return boolean
-local function checkPackages()
-    local hasError = false
-    local packages = {utils, settings, styles, localizationService, logger, windowManager, ui}
-    for _, package in ipairs(packages) do
-        if package == nil then
-            hasError = true
-            print("ERROR: Window Manager failed to intilize package: " .. tostring(_))
-            spdlog.error("ERROR: Window Manager failed to intilize package: " .. tostring(_))
-        end
-    end
-
-    if not RedCetWM then
-        hasError = true
-        print("ERROR: Could not find Red4Ext module, make sure you have Red4Ext installed!")
-        spdlog.error("ERROR: Could not find Red4Ext module, make sure you have Red4Ext installed!")
-    end
-
-    if hasError then
-        return false
-    end
-    return true
-end
-
 ---@return void
 local function initWindowManagerWindows()
     if CETWM.windows[localizationInst.localization_strings.modName] == nil then
@@ -82,12 +59,8 @@ local function initWindowManagerWindows()
     end
 end
 
-registerForEvent('onInit', function() 
-    if checkPackages() == false then
-        print("ERROR: Window Manager failed to intilize packages!")
-        spdlog.error("ERROR: Window Manager failed to intilize packages!")
-        return 
-    end
+registerForEvent('onInit', function()
+    CETWM.failedToLoad = RedCetWM == nil
     settingsInst = settings:getInstance()
     localizationInst = localizationService:getInstance()
     if not localizationInst then
@@ -114,6 +87,12 @@ end)
 
 registerForEvent("onDraw", function()
     if not CETWM.overlayOpen then return end
+
+    if CETWM.failedToLoad then
+        ui.drawFailedInitUI()
+        return
+    end
+
     if not CETWM.ready then return end
 
     if framesToWaitBeforeLoading >= 0 then
