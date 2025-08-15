@@ -17,7 +17,7 @@ local function modSettingsTab()
                 if language == CETWM.settingsInst.settings.localization then
                     goto continue
                 end
-                CETWM.requestSwitchWindowName(CETWM.localizationInst.localization_strings.modName)
+                windowManager.requestSwitchWindowName(CETWM.localizationInst.localization_strings.modName)
                 CETWM.requestedLanguageSwitch = language
                 ::continue::
             end
