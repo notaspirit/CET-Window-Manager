@@ -31,7 +31,9 @@ local function list_files()
         return files
     end
     for _, file in pairs(dir_files) do
-        table.insert(files, utils.remove_extension(file.name))
+        if file.name:lower():match("%.lua$") then
+            table.insert(files, utils.remove_extension(file.name))
+        end
     end
     return files
 end

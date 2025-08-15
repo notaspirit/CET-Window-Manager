@@ -1,0 +1,728 @@
+{
+  "settings": {
+    "localization": "en-us",
+    "hide_disclaimer": true,
+    "hideUnomitedWindows": false,
+    "hideOmitedWindows": true
+  },
+  "windows": {
+    "Bring Your Outfit": {
+      "visible": false,
+      "index": 27,
+      "locked": false,
+      "isCollapsed": true,
+      "lastPos": [
+        50,
+        250
+      ],
+      "disabled": false
+    },
+    "CET ImGui Window Builder Tool": {
+      "visible": true,
+      "index": 26,
+      "lastSize": [
+        42,
+        52
+      ],
+      "lastPos": {
+        "y": 10000,
+        "x": 10000
+      },
+      "isCollapsed": true,
+      "locked": false,
+      "disabled": true
+    },
+    "ImmersiveFirstPerson": {
+      "visible": false,
+      "index": 24,
+      "lastPos": [
+        838,
+        464
+      ],
+      "isCollapsed": false,
+      "locked": false,
+      "disabled": false
+    },
+    "FreeFly 2.4": {
+      "visible": false,
+      "index": 18,
+      "lastPos": [
+        60,
+        60
+      ],
+      "isCollapsed": false,
+      "locked": false,
+      "disabled": false
+    },
+    "TestThis": {
+      "visible": false,
+      "index": 19,
+      "isCollapsed": true,
+      "lastPos": [
+        766,
+        573
+      ],
+      "locked": false,
+      "disabled": true
+    },
+    "Console": {
+      "visible": false,
+      "index": 23,
+      "lastSize": [
+        1536,
+        32
+      ],
+      "isCollapsed": false,
+      "lastPos": [
+        706,
+        225
+      ],
+      "locked": false,
+      "disabled": false
+    },
+    "Ink Inspector##RHT:InkTools:MainWindow": {
+      "visible": false,
+      "index": 26,
+      "locked": false,
+      "lastPos": [
+        200,
+        200
+      ],
+      "isCollapsed": false,
+      "disabled": false
+    },
+    "Debug##Default": {
+      "visible": true,
+      "index": 22,
+      "lastSize": [
+        400,
+        400
+      ],
+      "lastPos": {
+        "y": 500,
+        "x": 500
+      },
+      "isCollapsed": false,
+      "locked": false,
+      "disabled": true
+    },
+    "Dear ImGui Style Editor": {
+      "visible": true,
+      "index": 20,
+      "lastSize": [
+        515,
+        794
+      ],
+      "lastPos": {
+        "y": 377,
+        "x": 573
+      },
+      "isCollapsed": false,
+      "locked": false,
+      "disabled": true
+    },
+    "󰒓 Simple Utils": {
+      "visible": false,
+      "index": 12,
+      "isCollapsed": false,
+      "lastPos": [
+        200,
+        200
+      ],
+      "locked": false,
+      "disabled": true
+    },
+    "Adaptive Graphics Quality": {
+      "visible": false,
+      "index": 12,
+      "isCollapsed": true,
+      "lastPos": [
+        1942,
+        829
+      ],
+      "locked": false,
+      "disabled": true
+    },
+    "Window": {
+      "visible": false,
+      "index": 19,
+      "lastPos": [
+        1203,
+        419
+      ],
+      "isCollapsed": true,
+      "locked": false,
+      "disabled": true
+    },
+    "Game Log": {
+      "visible": true,
+      "index": 21,
+      "lastSize": [
+        1536,
+        864
+      ],
+      "lastPos": {
+        "y": 288,
+        "x": 512
+      },
+      "isCollapsed": false,
+      "locked": false,
+      "disabled": true
+    },
+    "Target Tools": {
+      "visible": true,
+      "index": 25,
+      "lastSize": [
+        42,
+        52
+      ],
+      "lastPos": {
+        "y": 10000,
+        "x": 10000
+      },
+      "isCollapsed": true,
+      "locked": false,
+      "disabled": true
+    },
+    "About Dear ImGui": {
+      "visible": true,
+      "index": 24,
+      "lastSize": [
+        697,
+        234
+      ],
+      "lastPos": {
+        "y": 546,
+        "x": 1000
+      },
+      "isCollapsed": false,
+      "locked": false,
+      "disabled": true
+    },
+    "FreeFly 2.0": {
+      "visible": true,
+      "index": 28,
+      "lastSize": [
+        577,
+        306
+      ],
+      "lastPos": {
+        "y": 774,
+        "x": 1257
+      },
+      "isCollapsed": true,
+      "locked": false,
+      "disabled": true
+    },
+    "Vehicle Customizer": {
+      "visible": false,
+      "index": 21,
+      "locked": false,
+      "isCollapsed": true,
+      "lastPos": [
+        1284,
+        682
+      ]
+    },
+    "World Builder 1.0.6": {
+      "visible": true,
+      "index": 30,
+      "lastSize": [
+        543,
+        1005
+      ],
+      "lastPos": {
+        "y": 37,
+        "x": 1672
+      },
+      "isCollapsed": false,
+      "locked": false,
+      "disabled": true
+    },
+    "LUT Switcher": {
+      "visible": false,
+      "index": 29,
+      "locked": false,
+      "isCollapsed": false,
+      "lastPos": [
+        740,
+        220
+      ]
+    },
+    "Removal Editor": {
+      "visible": false,
+      "index": 16,
+      "locked": false,
+      "isCollapsed": true,
+      "lastPos": [
+        1628,
+        624
+      ]
+    },
+    "Game Entity Examiner Tool": {
+      "visible": true,
+      "index": 18,
+      "lastSize": [
+        42,
+        52
+      ],
+      "lastPos": {
+        "y": 10000,
+        "x": 10000
+      },
+      "isCollapsed": true,
+      "locked": false,
+      "disabled": true
+    },
+    "World Inspector##RHT:WorldTools": {
+      "visible": false,
+      "index": 17,
+      "locked": false,
+      "isCollapsed": false,
+      "lastPos": [
+        451,
+        367
+      ]
+    },
+    "Object Spawner 2.0": {
+      "visible": true,
+      "index": 19,
+      "lastSize": [
+        1000,
+        1038
+      ],
+      "lastPos": {
+        "y": 166,
+        "x": 863
+      },
+      "isCollapsed": false,
+      "locked": false,
+      "disabled": true
+    },
+    "WheezeKit 1.0.6": {
+      "visible": true,
+      "index": 8,
+      "lastSize": [
+        1310,
+        1354
+      ],
+      "lastPos": {
+        "y": 87,
+        "x": 1603
+      },
+      "isCollapsed": false,
+      "locked": false,
+      "disabled": true
+    },
+    "Cyber Engine Tweaks": {
+      "visible": true,
+      "index": 30,
+      "locked": false,
+      "isCollapsed": false,
+      "lastPos": [
+        836,
+        270
+      ]
+    },
+    "Delete Data?": {
+      "visible": true,
+      "index": 8,
+      "lastSize": [
+        182,
+        121
+      ],
+      "lastPos": {
+        "y": 659,
+        "x": 1189
+      },
+      "isCollapsed": false,
+      "locked": false,
+      "disabled": true
+    },
+    "WheezeKit 1.0.8": {
+      "visible": true,
+      "index": 14,
+      "isCollapsed": false,
+      "locked": false,
+      "lastPos": [
+        1506,
+        52
+      ],
+      "disabled": false
+    },
+    "Ink Inspector##RHT:InkTools:Overlay": {
+      "visible": true,
+      "index": 2,
+      "lastSize": [
+        767,
+        413
+      ],
+      "lastPos": {
+        "y": 4,
+        "x": 1789
+      },
+      "isCollapsed": false,
+      "locked": false,
+      "disabled": false
+    },
+    "Nova City Tools - v1.8.2": {
+      "visible": false,
+      "index": 4,
+      "lastSize": [
+        322,
+        599
+      ],
+      "lastPos": [
+        943,
+        795
+      ],
+      "isCollapsed": true,
+      "locked": false,
+      "disabled": true
+    },
+    "TweakDB Editor": {
+      "visible": false,
+      "index": 20,
+      "locked": false,
+      "isCollapsed": false,
+      "lastPos": [
+        200,
+        200
+      ]
+    },
+    "VolumetricSelection2077": {
+      "visible": true,
+      "index": 15,
+      "locked": false,
+      "isCollapsed": false,
+      "lastPos": [
+        15,
+        1019
+      ]
+    },
+    "Ultra+ v5.3.3": {
+      "visible": true,
+      "index": 3,
+      "lastSize": [
+        42,
+        52
+      ],
+      "lastPos": {
+        "y": 10000,
+        "x": 10000
+      },
+      "isCollapsed": true,
+      "locked": false,
+      "disabled": true
+    },
+    "Crosshair": {
+      "visible": true,
+      "index": 5,
+      "lastSize": [
+        42,
+        42
+      ],
+      "lastPos": [
+        1260,
+        700
+      ],
+      "isCollapsed": false,
+      "locked": false,
+      "disabled": true
+    },
+    "Window Manager": {
+      "visible": true,
+      "index": 1,
+      "lastSize": [
+        408,
+        824
+      ],
+      "lastPos": [
+        1,
+        8
+      ],
+      "isCollapsed": false,
+      "locked": true,
+      "disabled": false
+    },
+    "WheezeKit 1.0.4": {
+      "visible": true,
+      "index": 13,
+      "lastSize": [
+        985,
+        1038
+      ],
+      "lastPos": {
+        "y": 34,
+        "x": 1253
+      },
+      "isCollapsed": false,
+      "locked": false,
+      "disabled": true
+    },
+    "##TOAST0": {
+      "visible": true,
+      "index": 10,
+      "lastSize": [
+        304,
+        86
+      ],
+      "lastPos": [
+        2236,
+        1334
+      ],
+      "isCollapsed": false,
+      "locked": false,
+      "disabled": false
+    },
+    "##boxSelect": {
+      "visible": true,
+      "index": 12,
+      "lastSize": [
+        422,
+        173
+      ],
+      "lastPos": {
+        "y": 1210,
+        "x": 1182
+      },
+      "isCollapsed": false,
+      "locked": false,
+      "disabled": false
+    },
+    "WheezeKit 1.0.0": {
+      "visible": true,
+      "index": 15,
+      "lastSize": [
+        1000,
+        1038
+      ],
+      "lastPos": {
+        "y": 55,
+        "x": 1268
+      },
+      "isCollapsed": false,
+      "locked": false,
+      "disabled": true
+    },
+    "##popup": {
+      "visible": true,
+      "index": 11,
+      "lastSize": [
+        594,
+        1128
+      ],
+      "lastPos": {
+        "y": 153,
+        "x": 1756
+      },
+      "isCollapsed": false,
+      "locked": false,
+      "disabled": false
+    },
+    "Hot Reload##RHT:HotReload": {
+      "visible": false,
+      "index": 19,
+      "lastPos": [
+        534,
+        195
+      ],
+      "isCollapsed": false,
+      "locked": false,
+      "disabled": false
+    },
+    "Dynamic Fast Travel": {
+      "visible": false,
+      "index": 28,
+      "locked": false,
+      "isCollapsed": false,
+      "lastPos": [
+        642,
+        583
+      ]
+    },
+    "Dear ImGui Metrics/Debugger": {
+      "visible": true,
+      "index": 1,
+      "lastSize": [
+        891,
+        1060
+      ],
+      "lastPos": {
+        "y": 183,
+        "x": 1195
+      },
+      "isCollapsed": false,
+      "locked": false,
+      "disabled": true
+    },
+    "David Martinez Sandevistan Diagnostics": {
+      "visible": false,
+      "index": 20,
+      "lastPos": [
+        1744,
+        559
+      ],
+      "isCollapsed": true,
+      "locked": false,
+      "disabled": true
+    },
+    "Appearnace Menu MOd": {
+      "visible": true,
+      "index": 9,
+      "lastSize": [
+        42,
+        52
+      ],
+      "lastPos": {
+        "y": 60,
+        "x": 60
+      },
+      "isCollapsed": false,
+      "locked": false,
+      "disabled": true
+    },
+    "Settings": {
+      "visible": true,
+      "index": 3,
+      "lastSize": [
+        1536,
+        864
+      ],
+      "lastPos": [
+        863,
+        307
+      ],
+      "isCollapsed": false,
+      "locked": false,
+      "disabled": false
+    },
+    "Dear ImGui ID Stack Tool": {
+      "visible": true,
+      "index": 12,
+      "lastSize": [
+        1277,
+        286
+      ],
+      "lastPos": {
+        "y": 386,
+        "x": 679
+      },
+      "isCollapsed": false,
+      "locked": false,
+      "disabled": true
+    },
+    "WheezeKit 1.0.7": {
+      "visible": true,
+      "index": 14,
+      "lastSize": [
+        644,
+        1317
+      ],
+      "lastPos": {
+        "y": 69,
+        "x": 1473
+      },
+      "isCollapsed": false,
+      "locked": false,
+      "disabled": true
+    },
+    "Bindings": {
+      "visible": true,
+      "index": 7,
+      "lastSize": [
+        1536,
+        864
+      ],
+      "lastPos": {
+        "y": 403,
+        "x": 914
+      },
+      "isCollapsed": false,
+      "locked": false,
+      "disabled": true
+    },
+    "Dear ImGui Debug Log": {
+      "visible": true,
+      "index": 29,
+      "lastSize": [
+        320,
+        288
+      ],
+      "lastPos": {
+        "y": 277,
+        "x": 604
+      },
+      "isCollapsed": false,
+      "locked": false,
+      "disabled": true
+    },
+    "##drag": {
+      "visible": true,
+      "index": 13,
+      "lastSize": [
+        188,
+        44
+      ],
+      "lastPos": {
+        "y": 304,
+        "x": 2025
+      },
+      "isCollapsed": false,
+      "locked": false,
+      "disabled": false
+    },
+    "World Builder 1.0.0": {
+      "visible": true,
+      "index": 23,
+      "lastSize": [
+        543,
+        858
+      ],
+      "lastPos": {
+        "y": 66,
+        "x": 635
+      },
+      "isCollapsed": false,
+      "locked": false,
+      "disabled": true
+    },
+    "Decluttered Menus": {
+      "visible": false,
+      "index": 22,
+      "lastPos": [
+        828,
+        660
+      ],
+      "locked": false,
+      "isCollapsed": false,
+      "disabled": false
+    },
+    "Game Function Tester": {
+      "visible": true,
+      "index": 6,
+      "lastSize": [
+        42,
+        52
+      ],
+      "lastPos": [
+        2535,
+        1415
+      ],
+      "isCollapsed": true,
+      "locked": false,
+      "disabled": true
+    },
+    "Appearance Menu Mod": {
+      "visible": false,
+      "index": 25,
+      "locked": false,
+      "lastPos": [
+        200,
+        200
+      ],
+      "isCollapsed": false,
+      "disabled": false
+    }
+  }
+}
