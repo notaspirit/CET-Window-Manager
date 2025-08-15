@@ -38,6 +38,7 @@ CETWM = {
     deferredShow = {},
     deferredLock = {},
     deferredLockPt2 = {},
+    deferredRemoval = {},
     defferredSetSelfPos = {},
     requestWindowPos = false,
     requestedNameSwitch = '',
