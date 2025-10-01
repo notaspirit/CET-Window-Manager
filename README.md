@@ -1,6 +1,13 @@
 # Cyber Engine Tweaks Window Manager
 
-The intention behind this is to create a window manager for Cyber Engine Tweaks in Cyberpunk 2077.
-Once you have a couple of mods installed you will find that you entire cet window is plastered with just the headers of the windows and you can't find shit. 
+**Cyber Engine Tweaks Window Manager (CETWM / WM)** is a tool for managing CET windows, it supports:
 
-So this mod will manage them for you, by allowing you to hide them, so they're gone when you don't need them.
+- Hiding Windows
+- Locking Windows In Place
+- Automatic Detection
+
+> **Note:** Due to CET limitations it may detect windows that no longer exist, those can easily be omitted from the list.
+
+### Mirrors
+
+This mod is also available on [NexusMods](https://www.nexusmods.com/cyberpunk2077/mods/18448?tab=description)
