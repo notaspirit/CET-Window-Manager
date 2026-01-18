@@ -13,12 +13,34 @@ size_t WriteToString(void* contents, size_t size, size_t nmemb, std::string* out
     return totalSize;
 }
 
+
+std::filesystem::path GetExeDir()
+{
+    wchar_t buffer[MAX_PATH + 1];
+
+    DWORD len = GetModuleFileNameW(nullptr, buffer, MAX_PATH);
+    if (len == ERROR_INSUFFICIENT_BUFFER)
+        throw ERROR_INSUFFICIENT_BUFFER;
+
+    return std::filesystem::path(buffer).parent_path();
+}
+
 void GetWindowLayout(RED4ext::IScriptable* aContext, RED4ext::CStackFrame* aFrame, RED4ext::CString* aOut,
                int64_t a4)
 {
     aFrame->code++;
-
-    auto layoutIniPath = std::filesystem::current_path().string() + "\\plugins\\cyber_engine_tweaks\\layout.ini";
+    std::string layoutIniPath;
+    try
+    {
+        layoutIniPath = GetExeDir().string() + R"(\plugins\cyber_engine_tweaks\layout.ini)";
+    }
+    catch (const std::exception& e)
+    {
+        RSdk->logger->Error(PHandle, "Failed to get Executable Path. Cannot read window layout.");
+        *aOut = RED4ext::CString("");
+        return;
+    }
+    
 
     std::ifstream file(layoutIniPath);
     std::string content;
@@ -123,7 +145,7 @@ RED4EXT_C_EXPORT void RED4EXT_CALL Query(RED4ext::PluginInfo* aInfo)
 
     aInfo->name = L"RedCetWM";
     aInfo->author = L"sprt_";
-    aInfo->version = RED4EXT_SEMVER(2, 0, 2);
+    aInfo->version = RED4EXT_SEMVER(2, 0, 3);
     aInfo->runtime = RED4EXT_RUNTIME_INDEPENDENT;
     aInfo->sdk = RED4EXT_SDK_LATEST;
 }

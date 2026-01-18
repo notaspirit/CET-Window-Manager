@@ -23,7 +23,7 @@ local windowManager = require('modules/windowManager')
 local ui = require('modules/ui')
 
 CETWM = {
-    version = "2.0.2",
+    version = "2.0.3",
     ready = false,
     failedToLoad = false,
     windows = {}, -- Store window states: {name = {visible = bool, lastPos = {x,y}, isCollapsed = bool, index = int, locked = bool, lastSize = {x,y}, disabled = bool}}
