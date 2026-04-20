@@ -105,8 +105,8 @@ end
 local function lockWindowLoop()
     for name, state in pairs(CETWM.windows) do
         if not (state.visible and state.locked) then goto continue end
-
-        if ImGui.Begin(name, true) then 
+        
+        if ImGui.Begin(name, true) then
             local curPosX, curPosY = ImGui.GetWindowPos()
             local curSizeX, curSizeY = ImGui.GetWindowSize()
 
