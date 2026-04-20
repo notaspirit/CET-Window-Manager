@@ -43,7 +43,8 @@ CETWM = {
     requestWindowPos = false,
     requestedNameSwitch = '',
     requestedLanguageSwitch = '',
-    deferredSetSelfPos = {}
+    deferredSetSelfPos = {},
+    searchQuery = ""
 }
 
 local settingsInst
