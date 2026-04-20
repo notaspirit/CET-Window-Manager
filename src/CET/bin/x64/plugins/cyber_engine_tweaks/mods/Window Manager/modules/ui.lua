@@ -4,6 +4,9 @@ local styles = require("data/styles")
 local logger = require("modules/logger")
 
 local dragging_index = nil
+local cachedFilteredWindows = {}
+local cachedSearchQuery = ""
+local cacheInvalid = true
 
 ---@return void
 local function modSettingsTab()
@@ -43,10 +46,60 @@ local function drawUnomittedWindows()
         end
     end
 
+    -- Search and sort controls
+    local availWidth = ImGui.GetContentRegionAvail()
+    local sortAZWidth, _ = ImGui.CalcTextSize(CETWM.localizationInst.localization_strings.sortAZ)
+    local sortZAWidth, _ = ImGui.CalcTextSize(CETWM.localizationInst.localization_strings.sortZA)
+    local framePadding = ImGui.GetStyle().FramePadding
+    local itemSpacing = ImGui.GetStyle().ItemSpacing
+    
+    -- Calculate button widths (text + padding on both sides)
+    local buttonAZWidth = sortAZWidth + framePadding.x
+    local buttonZAWidth = sortZAWidth + framePadding.x
+    
+    -- Calculate input width: available - 2 buttons - spacing between elements
+    local inputWidth = availWidth - buttonAZWidth - buttonZAWidth - itemSpacing.x * 3
+    
+    ImGui.SetNextItemWidth(inputWidth)
+    CETWM.searchQuery, _ = ImGui.InputTextWithHint("##UnomittedWindowsSearch", CETWM.localizationInst.localization_strings.search, CETWM.searchQuery, 1024)
+    ImGui.SameLine()
+    
+    if ImGui.Button(CETWM.localizationInst.localization_strings.sortAZ) then
+        table.sort(onlyUnomitedWindows, function(a, b) return a.name < b.name end)
+        for i, window in ipairs(onlyUnomitedWindows) do
+            CETWM.windows[window.name].index = i
+        end
+        CETWM.settingsInst:update(CETWM.windows, "windows")
+        cacheInvalid = true
+    end
+    
+    ImGui.SameLine()
+    if ImGui.Button(CETWM.localizationInst.localization_strings.sortZA) then
+        table.sort(onlyUnomitedWindows, function(a, b) return a.name > b.name end)
+        for i, window in ipairs(onlyUnomitedWindows) do
+            CETWM.windows[window.name].index = i
+        end
+        CETWM.settingsInst:update(CETWM.windows, "windows")
+        cacheInvalid = true
+    end
+
+    if CETWM.searchQuery ~= cachedSearchQuery or cacheInvalid then
+        -- Search query changed or cache invalidated, recalculate filtered windows
+        cachedSearchQuery = CETWM.searchQuery
+        cacheInvalid = false
+        cachedFilteredWindows = {}
+        local searchLower = CETWM.searchQuery:lower()
+        for _, window in ipairs(onlyUnomitedWindows) do
+            if searchLower == "" or window.name:lower():find(searchLower, 1, true) then
+                table.insert(cachedFilteredWindows, window)
+            end
+        end
+    end
+
     local topY
     local itemHeight
 
-    for i, window in ipairs(onlyUnomitedWindows) do
+    for i, window in ipairs(cachedFilteredWindows) do
         ImGui.PushID(i)
 
         ImGui.BeginGroup()
@@ -78,6 +131,7 @@ local function drawUnomittedWindows()
             if not (name == CETWM.localizationInst.localization_strings.modName) then
                 state.visible = not state.visible 
                 CETWM.settingsInst:update(CETWM.windows, "windows")
+                cacheInvalid = true
                 if not state.visible then
                     windowManager.hideWindow(name)
                 else 
@@ -97,6 +151,7 @@ local function drawUnomittedWindows()
                 if ImGui.Button(IconGlyphs.EyeOff .. CETWM.localizationInst.localization_strings.omit .. "##" .. utils.getWindowDisplayName(window.name)) then
                     CETWM.windows[window.name].disabled = true
                     CETWM.settingsInst:update(CETWM.windows, "windows")
+                    cacheInvalid = true
                 end 
             end
 
@@ -131,15 +186,16 @@ local function drawUnomittedWindows()
 
         if insert_index < 1 then
             insert_index = 1
-        elseif insert_index > utils.tableLength(onlyUnomitedWindows) then
-            insert_index = utils.tableLength(onlyUnomitedWindows)
+        elseif insert_index > utils.tableLength(cachedFilteredWindows) then
+            insert_index = utils.tableLength(cachedFilteredWindows)
         end
 
         if insert_index then
-            local dragged_item = table.remove(onlyUnomitedWindows, dragging_index)
-            table.insert(onlyUnomitedWindows, insert_index, dragged_item)
+            local dragged_item = table.remove(cachedFilteredWindows, dragging_index)
+            table.insert(cachedFilteredWindows, insert_index, dragged_item)
 
-            for i, window in ipairs(onlyUnomitedWindows) do
+            -- Update indices for all unomitted windows based on filtered list order
+            for i, window in ipairs(cachedFilteredWindows) do
                 CETWM.windows[window.name].index = i
             end
         end
@@ -172,6 +228,7 @@ local function drawOmittedWindows()
             if ImGui.Button(IconGlyphs.Eye .. CETWM.localizationInst.localization_strings.unomit .. "##" .. utils.getWindowDisplayName(window.name)) then
                 CETWM.windows[window.name].disabled = false
                 CETWM.settingsInst:update(CETWM.windows, "windows")
+                cacheInvalid = true
             end
             ImGui.EndPopup()
         end
