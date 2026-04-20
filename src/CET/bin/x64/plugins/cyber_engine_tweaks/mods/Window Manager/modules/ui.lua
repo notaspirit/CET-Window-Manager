@@ -96,6 +96,49 @@ local function drawUnomittedWindows()
         end
     end
 
+        -- Draw toggle all buttons
+    ImGui.BeginGroup()
+    
+    -- Check states for all windows
+    local allLocked = true
+    local allVisible = true
+    for _, window in ipairs(cachedFilteredWindows) do
+        if not window.state.locked then
+            allLocked = false
+        end
+        if not window.state.visible then
+            allVisible = false
+        end
+    end
+    
+    -- Toggle all lock button
+    if allLocked then
+        styles.button_styled_light()
+    else
+        styles.button_styled_dark()
+    end
+    
+    if ImGui.Button((allLocked and IconGlyphs.Lock or IconGlyphs.LockOpenVariant) .. "##toggleAllLock") then
+        windowManager.toggleAllLocks(cachedFilteredWindows, not allLocked)
+    end
+    ImGui.PopStyleColor(3)
+    ImGui.SameLine()
+    
+    -- Toggle all visibility button
+    if allVisible then
+        styles.button_styled_light()
+    else
+        styles.button_styled_dark()
+    end
+    
+    if ImGui.Button("Toggle All##toggleAllVisibility", CETWM.minWidth, 0) then
+        windowManager.toggleAllVisibility(cachedFilteredWindows, not allVisible)
+    end
+    ImGui.PopStyleColor(3)
+    
+    ImGui.EndGroup()
+    ImGui.Separator()
+
     local topY
     local itemHeight
 
