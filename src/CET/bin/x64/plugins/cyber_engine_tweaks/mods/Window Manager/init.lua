@@ -56,8 +56,23 @@ local framesToWaitBeforeLoading = 5
 local function initWindowManagerWindows()
     if CETWM.windows[localizationInst.localization_strings.modName] == nil then
         local newIndex = utils.tableLength(CETWM.windows) + 1
-        CETWM.windows[localizationInst.localization_strings.modName] = {visible = true, lastPos = {x = 100, y = 100}, isCollapsed = false, index = newIndex, locked = false, lastSize = {1,1}}
+        CETWM.windows[localizationInst.localization_strings.modName] = {visible = true, lastPos = {x = 100, y = 100}, isCollapsed = false, index = newIndex, locked = false, lastSize = {1,1}, favorite = true, favoritesIndex = 0}
         settingsInst:update(CETWM.windows, "windows")
+    end
+    
+    -- Migrate existing windows to have favorite properties if they don't already
+    for name, window in pairs(CETWM.windows) do
+        if window.favorite == nil then
+            window.favorite = false
+        end
+        
+        if window.favoritesIndex == nil then
+            window.favoritesIndex = window.index or 0
+        end
+
+        if name == localizationInst.localization_strings.modName then
+            window.favorite = true
+        end
     end
 end
 

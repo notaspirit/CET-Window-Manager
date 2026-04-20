@@ -21,5 +21,7 @@ return {
     search = "Search",
     sortAZ = "A-Z",
     sortZA = "Z-A",
+    favorites = "Favorite Windows",
+    windows = "Regular Windows",
 }
 
