@@ -243,6 +243,41 @@ local function requestSwitchWindowName(oldName)
     CETWM.requestWindowPos = true
 end
 
+---@param windows table | nil
+---@param visibility boolean
+---@return void
+local function toggleAllVisibility(windows, visibility)
+    windows = windows or CETWM.windows
+    for _, window in ipairs(windows) do
+        if not window.state.disabled and window.name ~= CETWM.localizationInst.localization_strings.modName then
+            if visibility then
+                window.state.visible = true
+                showWindow(window.name)
+            else
+                window.state.visible = false
+                hideWindow(window.name)
+            end
+        end
+    end
+    
+    CETWM.settingsInst:update(CETWM.windows, "windows")
+end
+
+---@param windows table | nil
+---@param locked boolean
+---@return void
+local function toggleAllLocks(windows, locked)
+    windows = windows or CETWM.windows
+    for _, window in ipairs(windows) do
+        if not window.state.disabled then
+            window.state.locked = not locked
+            toggleLock(window.name)
+        end
+    end
+
+    CETWM.settingsInst:update(CETWM.windows, "windows")
+end
+
 return {
     hideWindowProcess = hideWindowProcess,
     showWindowProcess = showWindowProcess,
@@ -256,4 +291,6 @@ return {
     processDeferred = processDeferred,
     loadWindowsFromFile = loadWindowsFromFile,
     requestSwitchWindowName = requestSwitchWindowName,
+    toggleAllVisibility = toggleAllVisibility,
+    toggleAllLocks = toggleAllLocks
 }
