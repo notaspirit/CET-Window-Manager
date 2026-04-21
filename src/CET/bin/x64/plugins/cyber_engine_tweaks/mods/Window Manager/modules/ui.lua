@@ -4,7 +4,11 @@ local styles = require("data/styles")
 local logger = require("modules/logger")
 
 local dragging_index = nil
-local cachedFilteredWindows = {}
+local dragging_section = nil  -- "favorites" or "regular"
+local cachedFavorites = {}
+local cachedRegular = {}
+local cachedFilteredFavorites = {}
+local cachedFilteredRegular = {}
 local cachedSearchQuery = ""
 local cacheInvalid = true
 
@@ -39,6 +43,7 @@ local function drawUnomittedWindows()
     CETWM.minWidth = utils.longestStringLenghtPX(CETWM.windows, false)
     local sortedWindows = utils.sortTable(CETWM.windows)
 
+    -- Separate non-omitted windows into favorites and regular
     local onlyUnomitedWindows = {}
     for _, window in ipairs(sortedWindows) do
         if not window.state.disabled then
@@ -46,16 +51,42 @@ local function drawUnomittedWindows()
         end
     end
 
+    if (cacheInvalid) then
+        -- If cache is invalid, recalculate favorites and regular lists
+        cachedFavorites = {}
+        cachedRegular = {}
+        
+        local favoritesList = {}
+        local regularList = {}
+        
+        for _, window in ipairs(onlyUnomitedWindows) do
+            if window.state.favorite then
+                table.insert(favoritesList, window)
+            else
+                table.insert(regularList, window)
+            end
+        end
+        
+        -- Sort each list by index
+        table.sort(favoritesList, function(a, b) return (a.state.favoritesIndex or a.state.index) < (b.state.favoritesIndex or b.state.index) end)
+        table.sort(regularList, function(a, b) return a.state.index < b.state.index end)
+        
+        cachedFavorites = favoritesList
+        cachedRegular = regularList
+    end
+    
     -- Search and sort controls
     local availWidth = ImGui.GetContentRegionAvail()
     local sortAZWidth, _ = ImGui.CalcTextSize(CETWM.localizationInst.localization_strings.sortAZ)
     local sortZAWidth, _ = ImGui.CalcTextSize(CETWM.localizationInst.localization_strings.sortZA)
+    local iconGlphyWidth, _ = ImGui.CalcTextSize(IconGlyphs.Star)
     local framePadding = ImGui.GetStyle().FramePadding
     local itemSpacing = ImGui.GetStyle().ItemSpacing
     
     -- Calculate button widths (text + padding on both sides)
     local buttonAZWidth = sortAZWidth + framePadding.x
     local buttonZAWidth = sortZAWidth + framePadding.x
+    local buttonIconWidth = iconGlphyWidth + framePadding.x
     
     -- Calculate input width: available - 2 buttons - spacing between elements
     local inputWidth = availWidth - buttonAZWidth - buttonZAWidth - itemSpacing.x * 3
@@ -65,20 +96,40 @@ local function drawUnomittedWindows()
     ImGui.SameLine()
     
     if ImGui.Button(CETWM.localizationInst.localization_strings.sortAZ) then
-        table.sort(onlyUnomitedWindows, function(a, b) return a.name < b.name end)
-        for i, window in ipairs(onlyUnomitedWindows) do
+        -- Sort both sections by name
+        table.sort(cachedFavorites, function(a, b) return a.name < b.name end)
+        table.sort(cachedRegular, function(a, b) return a.name < b.name end)
+        
+        -- Update favoritesIndex for favorites section
+        for i, window in ipairs(cachedFavorites) do
+            CETWM.windows[window.name].favoritesIndex = i
+        end
+        
+        -- Update index for regular section  
+        for i, window in ipairs(cachedRegular) do
             CETWM.windows[window.name].index = i
         end
+        
         CETWM.settingsInst:update(CETWM.windows, "windows")
         cacheInvalid = true
     end
     
     ImGui.SameLine()
     if ImGui.Button(CETWM.localizationInst.localization_strings.sortZA) then
-        table.sort(onlyUnomitedWindows, function(a, b) return a.name > b.name end)
-        for i, window in ipairs(onlyUnomitedWindows) do
+        -- Sort both sections by name in reverse
+        table.sort(cachedFavorites, function(a, b) return a.name > b.name end)
+        table.sort(cachedRegular, function(a, b) return a.name > b.name end)
+        
+        -- Update favoritesIndex for favorites section
+        for i, window in ipairs(cachedFavorites) do
+            CETWM.windows[window.name].favoritesIndex = i
+        end
+        
+        -- Update index for regular section
+        for i, window in ipairs(cachedRegular) do
             CETWM.windows[window.name].index = i
         end
+        
         CETWM.settingsInst:update(CETWM.windows, "windows")
         cacheInvalid = true
     end
@@ -87,164 +138,237 @@ local function drawUnomittedWindows()
         -- Search query changed or cache invalidated, recalculate filtered windows
         cachedSearchQuery = CETWM.searchQuery
         cacheInvalid = false
-        cachedFilteredWindows = {}
+        cachedFilteredFavorites = {}
+        cachedFilteredRegular = {}
         local searchLower = CETWM.searchQuery:lower()
-        for _, window in ipairs(onlyUnomitedWindows) do
+        
+        for _, window in ipairs(cachedFavorites) do
             if searchLower == "" or window.name:lower():find(searchLower, 1, true) then
-                table.insert(cachedFilteredWindows, window)
+                table.insert(cachedFilteredFavorites, window)
+            end
+        end
+        
+        for _, window in ipairs(cachedRegular) do
+            if searchLower == "" or window.name:lower():find(searchLower, 1, true) then
+                table.insert(cachedFilteredRegular, window)
             end
         end
     end
 
-        -- Draw toggle all buttons
-    ImGui.BeginGroup()
-    
-    -- Check states for all windows
-    local allLocked = true
-    local allVisible = true
-    for _, window in ipairs(cachedFilteredWindows) do
-        if not window.state.locked then
-            allLocked = false
-        end
-        if not window.state.visible then
-            allVisible = false
-        end
-    end
-    
-    -- Toggle all lock button
-    if allLocked then
-        styles.button_styled_light()
-    else
-        styles.button_styled_dark()
-    end
-    
-    if ImGui.Button((allLocked and IconGlyphs.Lock or IconGlyphs.LockOpenVariant) .. "##toggleAllLock") then
-        windowManager.toggleAllLocks(cachedFilteredWindows, not allLocked)
-    end
-    ImGui.PopStyleColor(3)
-    ImGui.SameLine()
-    
-    -- Toggle all visibility button
-    if allVisible then
-        styles.button_styled_light()
-    else
-        styles.button_styled_dark()
-    end
-    
-    if ImGui.Button("Toggle All##toggleAllVisibility", CETWM.minWidth, 0) then
-        windowManager.toggleAllVisibility(cachedFilteredWindows, not allVisible)
-    end
-    ImGui.PopStyleColor(3)
-    
-    ImGui.EndGroup()
-    ImGui.Separator()
+    -- Helper function to draw a section
+    local function drawWindowsSection(sectionWindows, isFavorite)
 
-    local topY
-    local itemHeight
-
-    for i, window in ipairs(cachedFilteredWindows) do
-        ImGui.PushID(i)
-
-        ImGui.BeginGroup()
-
-        local name = window.name
-        local state = window.state
-
-        if state.locked then
+        if isFavorite then
             styles.button_styled_light()
         else
             styles.button_styled_dark()
         end
 
-
-        if ImGui.Button(string.format("%s##%s", (state.locked and IconGlyphs.Lock or IconGlyphs.LockOpenVariant), name)) then
-            windowManager.toggleLock(name)
+        if ImGui.Button(string.format("%s##fav_%s", (isFavorite and IconGlyphs.Star or IconGlyphs.StarOutline), (isFavorite and "toggleAllFavoritesPlaceHolder" or "toggleAllRegularPlaceHolder"))) then
+            windowManager.toggleAllFavorites(sectionWindows, isFavorite, not isFavorite)
+            cacheInvalid = true
         end
-
         ImGui.PopStyleColor(3)
         ImGui.SameLine()
 
-        if state.visible then
+        -- Check states for this section
+        local allLocked = true
+        local allVisible = true
+        for _, window in ipairs(sectionWindows) do
+            if not window.state.locked then
+                allLocked = false
+            end
+            if not window.state.visible then
+                allVisible = false
+            end
+        end
+        
+        -- Toggle all lock button
+        if allLocked then
             styles.button_styled_light()
         else
             styles.button_styled_dark()
         end
         
-        if ImGui.Button(utils.getWindowDisplayName(window.name), CETWM.minWidth, 0) then
-            if not (name == CETWM.localizationInst.localization_strings.modName) then
-                state.visible = not state.visible 
-                CETWM.settingsInst:update(CETWM.windows, "windows")
-                cacheInvalid = true
-                if not state.visible then
-                    windowManager.hideWindow(name)
-                else 
-                    windowManager.showWindow(name)
-                end
-            end
+        local lockButtonLabel = isFavorite and (allLocked and IconGlyphs.Lock or IconGlyphs.LockOpenVariant) .. "##toggleAllLockFavorites" or (allLocked and IconGlyphs.Lock or IconGlyphs.LockOpenVariant) .. "##toggleAllLock"
+        if ImGui.Button(lockButtonLabel) then
+            windowManager.toggleAllLocks(sectionWindows, not allLocked)
+        end
+        ImGui.PopStyleColor(3)
+        ImGui.SameLine()
+        
+        -- Toggle all visibility button
+        if allVisible then
+            styles.button_styled_light()
+        else
+            styles.button_styled_dark()
+        end
+        
+        local toggleLabel = isFavorite and "Toggle All##toggleAllVisibilityFavorites" or "Toggle All##toggleAllVisibility"
+        if ImGui.Button(toggleLabel, CETWM.minWidth, 0) then
+            windowManager.toggleAllVisibility(sectionWindows, not allVisible)
         end
         ImGui.PopStyleColor(3)
 
-        if (ImGui.BeginPopupContextItem("Window Context Menu##" .. window.name, ImGuiPopupFlags.MouseButtonRight)) then
-            ImGui.Text(utils.getWindowDisplayName(window.name))
-            if ImGui.Button(IconGlyphs.Cached .. CETWM.localizationInst.localization_strings.resetWindow .. "##" .. utils.getWindowDisplayName(window.name)) then
-                windowManager.resetWindow(window.name)
+        ImGui.Separator()
+
+        local topY
+        local itemHeight
+
+        for i, window in ipairs(sectionWindows) do
+            ImGui.PushID((isFavorite and "fav_" or "reg_") .. i)
+
+            ImGui.BeginGroup()
+
+            local name = window.name
+            local state = window.state
+            
+            -- Favorite button
+            if state.favorite then
+                styles.button_styled_light()
+            else
+                styles.button_styled_dark()
             end
 
-            if (not (window.name == CETWM.localizationInst.localization_strings.modName)) then
-                if ImGui.Button(IconGlyphs.EyeOff .. CETWM.localizationInst.localization_strings.omit .. "##" .. utils.getWindowDisplayName(window.name)) then
-                    CETWM.windows[window.name].disabled = true
+            if ImGui.Button(string.format("%s##fav_%s", (state.favorite and IconGlyphs.Star or IconGlyphs.StarOutline), name)) then
+                windowManager.toggleFavorite(name)
+                cacheInvalid = true
+            end
+
+            ImGui.PopStyleColor(3)
+            ImGui.SameLine()
+
+             -- Lock button
+            if state.locked then
+                styles.button_styled_light()
+            else
+                styles.button_styled_dark()
+            end
+
+            if ImGui.Button(string.format("%s##%s", (state.locked and IconGlyphs.Lock or IconGlyphs.LockOpenVariant), name)) then
+                windowManager.toggleLock(name)
+            end
+
+            ImGui.PopStyleColor(3)
+            ImGui.SameLine()
+
+            if state.visible then
+                styles.button_styled_light()
+            else
+                styles.button_styled_dark()
+            end
+            
+            if ImGui.Button(utils.getWindowDisplayName(window.name), CETWM.minWidth, 0) then
+                if not (name == CETWM.localizationInst.localization_strings.modName) then
+                    state.visible = not state.visible 
                     CETWM.settingsInst:update(CETWM.windows, "windows")
                     cacheInvalid = true
-                end 
+                    if not state.visible then
+                        windowManager.hideWindow(name)
+                    else 
+                        windowManager.showWindow(name)
+                    end
+                end
+            end
+            ImGui.PopStyleColor(3)
+
+            if (ImGui.BeginPopupContextItem("Window Context Menu##" .. window.name, ImGuiPopupFlags.MouseButtonRight)) then
+                ImGui.Text(utils.getWindowDisplayName(window.name))
+                if ImGui.Button(IconGlyphs.Cached .. CETWM.localizationInst.localization_strings.resetWindow .. "##" .. utils.getWindowDisplayName(window.name)) then
+                    windowManager.resetWindow(window.name)
+                end
+
+                if (not (window.name == CETWM.localizationInst.localization_strings.modName)) then
+                    if ImGui.Button(IconGlyphs.EyeOff .. CETWM.localizationInst.localization_strings.omit .. "##" .. utils.getWindowDisplayName(window.name)) then
+                        CETWM.windows[window.name].disabled = true
+                        CETWM.settingsInst:update(CETWM.windows, "windows")
+                        cacheInvalid = true
+                    end 
+                end
+
+                ImGui.EndPopup()
+            end
+            ImGui.EndGroup()
+
+            -- Get the bounding box of the item
+            local item_x1, item_y1 = ImGui.GetItemRectMin()
+            local item_x2, item_y2 = ImGui.GetItemRectMax()
+            local item_height = item_y2 - item_y1
+            item_height = item_height + ImGui.GetStyle().ItemSpacing.y
+            
+            topY = topY or item_y1
+            itemHeight = itemHeight or item_height
+
+            -- Start dragging
+            if ImGui.IsItemActive() and ImGui.IsMouseDragging(0) then
+                if not dragging_index then
+                    dragging_index = i
+                    dragging_section = isFavorite and "favorites" or "regular"
+                end
             end
 
-            ImGui.EndPopup()
+            ImGui.PopID()
         end
-        ImGui.EndGroup()
 
-        -- Get the bounding box of the item
-        local item_x1, item_y1 = ImGui.GetItemRectMin()
-        local item_x2, item_y2 = ImGui.GetItemRectMax()
-        local item_height = item_y2 - item_y1
-        item_height = item_height + ImGui.GetStyle().ItemSpacing.y
-        
-        topY = topY or item_y1
-        itemHeight = itemHeight or item_height
+        -- Handle drop
+        if dragging_index and dragging_section == (isFavorite and "favorites" or "regular") and not ImGui.IsMouseDragging(0) then
+            local insert_index = nil
+            local mouse_x, mouse_y = ImGui.GetMousePos()
+            insert_index = math.floor(((mouse_y - topY) / itemHeight) + 0.5) + 1
 
-        -- Start dragging
-        if ImGui.IsItemActive() and ImGui.IsMouseDragging(0) then
-            if not dragging_index then
-                dragging_index = i
+            if insert_index < 1 then
+                insert_index = 1
+            elseif insert_index > utils.tableLength(sectionWindows) then
+                insert_index = utils.tableLength(sectionWindows)
             end
+
+            if insert_index then
+                local dragged_item = table.remove(sectionWindows, dragging_index)
+                table.insert(sectionWindows, insert_index, dragged_item)
+
+                -- Update indices based on section
+                if isFavorite then
+                    for i, window in ipairs(sectionWindows) do
+                        CETWM.windows[window.name].favoritesIndex = i
+                    end
+                else
+                    for i, window in ipairs(sectionWindows) do
+                        CETWM.windows[window.name].index = i
+                    end
+                end
+            end
+
+            CETWM.settingsInst:update(CETWM.windows, "windows")
+            dragging_index = nil
+            dragging_section = nil
         end
 
-        ImGui.PopID()
+        return topY, itemHeight
     end
 
-    -- Handle drop
+    local fullWidthButton = availWidth
+
+    -- Draw Favorites Section
+    if utils.tableLength(cachedFilteredFavorites) > 0 then
+        ImGui.BeginGroup()
+        ImGui.Button(CETWM.localizationInst.localization_strings.favorites .. "##favorites", fullWidthButton, 0)
+        ImGui.EndGroup()
+        drawWindowsSection(cachedFilteredFavorites, true)
+        ImGui.Separator()
+    end
+
+    -- Draw Regular Windows Section
+    ImGui.BeginGroup()
+    if utils.tableLength(cachedFilteredFavorites) > 0 then
+        ImGui.Button(CETWM.localizationInst.localization_strings.windows .. "##windows", fullWidthButton, 0)
+    end
+    ImGui.EndGroup()
+    drawWindowsSection(cachedFilteredRegular, false)
+
+    -- Reset dragging if mouse was released and no drop occurred
     if dragging_index and not ImGui.IsMouseDragging(0) then
-        local insert_index = nil
-        local mouse_x, mouse_y = ImGui.GetMousePos()
-        insert_index = math.floor(((mouse_y - topY) / itemHeight) + 0.5) + 1
-
-        if insert_index < 1 then
-            insert_index = 1
-        elseif insert_index > utils.tableLength(cachedFilteredWindows) then
-            insert_index = utils.tableLength(cachedFilteredWindows)
-        end
-
-        if insert_index then
-            local dragged_item = table.remove(cachedFilteredWindows, dragging_index)
-            table.insert(cachedFilteredWindows, insert_index, dragged_item)
-
-            -- Update indices for all unomitted windows based on filtered list order
-            for i, window in ipairs(cachedFilteredWindows) do
-                CETWM.windows[window.name].index = i
-            end
-        end
-
-        CETWM.settingsInst:update(CETWM.windows, "windows")
         dragging_index = nil
+        dragging_section = nil
     end
 
 end

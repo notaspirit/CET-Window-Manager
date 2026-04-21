@@ -63,6 +63,13 @@ end
 
 ---@param name string
 ---@return void
+local function toggleFavorite(name)
+    CETWM.windows[name].favorite = not CETWM.windows[name].favorite
+    CETWM.settingsInst:update(CETWM.windows, "windows")
+end
+
+---@param name string
+---@return void
 local function toggleLockProcessPt2(name)
     table.insert(CETWM.deferredLockPt2, name)
 end
@@ -278,6 +285,17 @@ local function toggleAllLocks(windows, locked)
     CETWM.settingsInst:update(CETWM.windows, "windows")
 end
 
+local function toggleAllFavorites(windows, currentState, targetState)
+    windows = windows or CETWM.windows
+    for _, window in ipairs(windows) do
+        if not window.state.disabled and window.state.favorite == currentState then
+            window.state.favorite = targetState
+        end
+    end
+
+    CETWM.settingsInst:update(CETWM.windows, "windows")
+end
+
 return {
     hideWindowProcess = hideWindowProcess,
     showWindowProcess = showWindowProcess,
@@ -285,6 +303,7 @@ return {
     hideWindow = hideWindow,
     resetWindow = resetWindow,
     toggleLock = toggleLock,
+    toggleFavorite = toggleFavorite,
     toggleLockProcess = toggleLockProcess,
     toggleLockProcessPt2 = toggleLockProcessPt2,
     lockWindowLoop = lockWindowLoop,
@@ -292,5 +311,6 @@ return {
     loadWindowsFromFile = loadWindowsFromFile,
     requestSwitchWindowName = requestSwitchWindowName,
     toggleAllVisibility = toggleAllVisibility,
-    toggleAllLocks = toggleAllLocks
+    toggleAllLocks = toggleAllLocks,
+    toggleAllFavorites = toggleAllFavorites
 }
