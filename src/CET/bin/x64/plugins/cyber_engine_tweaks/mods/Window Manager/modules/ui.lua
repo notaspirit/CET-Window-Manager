@@ -5,6 +5,8 @@ local logger = require("modules/logger")
 
 local dragging_index = nil
 local dragging_section = nil  -- "favorites" or "regular"
+local drag_drop_line_y = nil  -- Y position for the drop indicator line
+local drag_item_name = nil  -- Name of item being dragged
 local cachedFavorites = {}
 local cachedRegular = {}
 local cachedFilteredFavorites = {}
@@ -216,98 +218,123 @@ local function drawUnomittedWindows()
         local itemHeight
 
         for i, window in ipairs(sectionWindows) do
-            ImGui.PushID((isFavorite and "fav_" or "reg_") .. i)
-
-            ImGui.BeginGroup()
-
-            local name = window.name
-            local state = window.state
+            -- Skip rendering the dragged item
+            local is_dragging_this_item = dragging_index == i and dragging_section == (isFavorite and "favorites" or "regular")
             
-            -- Favorite button
-            if state.favorite then
-                styles.button_styled_light()
-            else
-                styles.button_styled_dark()
-            end
+            if not is_dragging_this_item then
+                ImGui.PushID((isFavorite and "fav_" or "reg_") .. i)
 
-            if ImGui.Button(string.format("%s##fav_%s", (state.favorite and IconGlyphs.Star or IconGlyphs.StarOutline), name)) then
-                windowManager.toggleFavorite(name)
-                cacheInvalid = true
-            end
+                ImGui.BeginGroup()
 
-            ImGui.PopStyleColor(3)
-            ImGui.SameLine()
+                local name = window.name
+                local state = window.state
+                
+                -- Favorite button
+                if state.favorite then
+                    styles.button_styled_light()
+                else
+                    styles.button_styled_dark()
+                end
 
-             -- Lock button
-            if state.locked then
-                styles.button_styled_light()
-            else
-                styles.button_styled_dark()
-            end
-
-            if ImGui.Button(string.format("%s##%s", (state.locked and IconGlyphs.Lock or IconGlyphs.LockOpenVariant), name)) then
-                windowManager.toggleLock(name)
-            end
-
-            ImGui.PopStyleColor(3)
-            ImGui.SameLine()
-
-            if state.visible then
-                styles.button_styled_light()
-            else
-                styles.button_styled_dark()
-            end
-            
-            if ImGui.Button(utils.getWindowDisplayName(window.name), CETWM.minWidth, 0) then
-                if not (name == CETWM.localizationInst.localization_strings.modName) then
-                    state.visible = not state.visible 
-                    CETWM.settingsInst:update(CETWM.windows, "windows")
+                if ImGui.Button(string.format("%s##fav_%s", (state.favorite and IconGlyphs.Star or IconGlyphs.StarOutline), name)) then
+                    windowManager.toggleFavorite(name)
                     cacheInvalid = true
-                    if not state.visible then
-                        windowManager.hideWindow(name)
-                    else 
-                        windowManager.showWindow(name)
-                    end
-                end
-            end
-            ImGui.PopStyleColor(3)
-
-            if (ImGui.BeginPopupContextItem("Window Context Menu##" .. window.name, ImGuiPopupFlags.MouseButtonRight)) then
-                ImGui.Text(utils.getWindowDisplayName(window.name))
-                if ImGui.Button(IconGlyphs.Cached .. CETWM.localizationInst.localization_strings.resetWindow .. "##" .. utils.getWindowDisplayName(window.name)) then
-                    windowManager.resetWindow(window.name)
                 end
 
-                if (not (window.name == CETWM.localizationInst.localization_strings.modName)) then
-                    if ImGui.Button(IconGlyphs.EyeOff .. CETWM.localizationInst.localization_strings.omit .. "##" .. utils.getWindowDisplayName(window.name)) then
-                        CETWM.windows[window.name].disabled = true
+                ImGui.PopStyleColor(3)
+                ImGui.SameLine()
+
+                 -- Lock button
+                if state.locked then
+                    styles.button_styled_light()
+                else
+                    styles.button_styled_dark()
+                end
+
+                if ImGui.Button(string.format("%s##%s", (state.locked and IconGlyphs.Lock or IconGlyphs.LockOpenVariant), name)) then
+                    windowManager.toggleLock(name)
+                end
+
+                ImGui.PopStyleColor(3)
+                ImGui.SameLine()
+
+                if state.visible then
+                    styles.button_styled_light()
+                else
+                    styles.button_styled_dark()
+                end
+                
+                if ImGui.Button(utils.getWindowDisplayName(window.name), CETWM.minWidth, 0) then
+                    if not (name == CETWM.localizationInst.localization_strings.modName) then
+                        state.visible = not state.visible 
                         CETWM.settingsInst:update(CETWM.windows, "windows")
                         cacheInvalid = true
-                    end 
+                        if not state.visible then
+                            windowManager.hideWindow(name)
+                        else 
+                            windowManager.showWindow(name)
+                        end
+                    end
+                end
+                ImGui.PopStyleColor(3)
+
+                if (ImGui.BeginPopupContextItem("Window Context Menu##" .. window.name, ImGuiPopupFlags.MouseButtonRight)) then
+                    ImGui.Text(utils.getWindowDisplayName(window.name))
+                    if ImGui.Button(IconGlyphs.Cached .. CETWM.localizationInst.localization_strings.resetWindow .. "##" .. utils.getWindowDisplayName(window.name)) then
+                        windowManager.resetWindow(window.name)
+                    end
+
+                    if (not (window.name == CETWM.localizationInst.localization_strings.modName)) then
+                        if ImGui.Button(IconGlyphs.EyeOff .. CETWM.localizationInst.localization_strings.omit .. "##" .. utils.getWindowDisplayName(window.name)) then
+                            CETWM.windows[window.name].disabled = true
+                            CETWM.settingsInst:update(CETWM.windows, "windows")
+                            cacheInvalid = true
+                        end 
+                    end
+
+                    ImGui.EndPopup()
+                end
+                ImGui.EndGroup()
+
+                -- Get the bounding box of the item
+                local item_x1, item_y1 = ImGui.GetItemRectMin()
+                local item_x2, item_y2 = ImGui.GetItemRectMax()
+                local item_height = item_y2 - item_y1
+                item_height = item_height + ImGui.GetStyle().ItemSpacing.y
+                
+                topY = topY or item_y1
+                itemHeight = itemHeight or item_height
+
+                -- Start dragging
+                if ImGui.IsItemActive() and ImGui.IsMouseDragging(0) then
+                    if not dragging_index then
+                        dragging_index = i
+                        dragging_section = isFavorite and "favorites" or "regular"
+                        drag_item_name = window.name
+                    end
                 end
 
-                ImGui.EndPopup()
+                ImGui.PopID()
             end
-            ImGui.EndGroup()
+        end
 
-            -- Get the bounding box of the item
-            local item_x1, item_y1 = ImGui.GetItemRectMin()
-            local item_x2, item_y2 = ImGui.GetItemRectMax()
-            local item_height = item_y2 - item_y1
-            item_height = item_height + ImGui.GetStyle().ItemSpacing.y
+        -- Calculate drop line position if dragging
+        if dragging_index and dragging_section == (isFavorite and "favorites" or "regular") and ImGui.IsMouseDragging(0) then
+            local mouse_x, mouse_y = ImGui.GetMousePos()
+            local drop_index = math.floor(((mouse_y - topY) / itemHeight) + 0.5) + 1
             
-            topY = topY or item_y1
-            itemHeight = itemHeight or item_height
-
-            -- Start dragging
-            if ImGui.IsItemActive() and ImGui.IsMouseDragging(0) then
-                if not dragging_index then
-                    dragging_index = i
-                    dragging_section = isFavorite and "favorites" or "regular"
-                end
+            if drop_index < 1 then
+                drop_index = 1
+            elseif drop_index > utils.tableLength(sectionWindows) then
+                drop_index = utils.tableLength(sectionWindows)
             end
-
-            ImGui.PopID()
+            
+            -- Calculate the Y position for the drop line
+            if drop_index <= utils.tableLength(sectionWindows) then
+                drag_drop_line_y = topY + (drop_index - 1) * itemHeight
+            else
+                drag_drop_line_y = topY + (utils.tableLength(sectionWindows)) * itemHeight
+            end
         end
 
         -- Handle drop
@@ -341,6 +368,8 @@ local function drawUnomittedWindows()
             CETWM.settingsInst:update(CETWM.windows, "windows")
             dragging_index = nil
             dragging_section = nil
+            drag_drop_line_y = nil
+            drag_item_name = nil
         end
 
         return topY, itemHeight
@@ -369,8 +398,77 @@ local function drawUnomittedWindows()
     if dragging_index and not ImGui.IsMouseDragging(0) then
         dragging_index = nil
         dragging_section = nil
+        drag_drop_line_y = nil
+        drag_item_name = nil
     end
 
+end
+
+--- Draw drag and drop visuals
+---@return void
+local function drawDragVisuals()
+    if not dragging_index or not drag_item_name then
+        return
+    end
+
+    -- Get draw list and mouse position
+    local drawList = ImGui.GetForegroundDrawList()
+    local mouse_x, mouse_y = ImGui.GetMousePos()
+    local mouse_y_offset = 20  -- Offset below cursor
+
+    -- Draw blue drop indicator line
+    if drag_drop_line_y then
+        -- Get the content region bounds to draw line across the list width
+        local content_min_x, content_min_y = ImGui.GetWindowContentRegionMin()
+        local content_max_x, content_max_y = ImGui.GetWindowContentRegionMax()
+        local win_x, win_y = ImGui.GetWindowPos()
+        
+        -- Calculate actual screen coordinates for the line
+        local line_x1 = win_x + content_min_x
+        local line_x2 = win_x + content_max_x
+        
+        -- Draw a blue line
+        local blue = ImGui.GetColorU32(0, 0.5, 1, 1)  -- Bright blue
+        ImGui.ImDrawListAddLine(drawList, line_x1, drag_drop_line_y - (ImGui.GetStyle().ItemSpacing.y / 2), line_x2, drag_drop_line_y - (ImGui.GetStyle().ItemSpacing.y / 2), blue, 2)
+    end
+
+    -- Draw dragged item representation following cursor
+    if drag_item_name then
+        local displayName = utils.getWindowDisplayName(drag_item_name)
+        local text_width, text_height = ImGui.CalcTextSize(displayName)
+        
+        -- Ensure we have numeric values (fallback to reasonable defaults)
+        if type(text_width) ~= "number" then
+            text_width = 150
+        end
+        if type(text_height) ~= "number" then
+            text_height = 20
+        end
+        
+        -- Draw semi-transparent background box
+        local bg_color = ImGui.GetColorU32(0.2, 0.2, 0.2, 0.7)  -- Dark semi-transparent
+        local border_color = ImGui.GetColorU32(0.5, 0.7, 1, 1)  -- Blue border
+        
+        local padding = 5
+        ImGui.ImDrawListAddRectFilled(
+            drawList,
+            mouse_x, mouse_y + mouse_y_offset,
+            mouse_x + text_width + padding * 2, mouse_y + mouse_y_offset + text_height + padding * 2,
+            bg_color, 4  -- 4 = rounding
+        )
+        
+        -- Draw border
+        ImGui.ImDrawListAddRect(
+            drawList,
+            mouse_x, mouse_y + mouse_y_offset,
+            mouse_x + text_width + padding * 2, mouse_y + mouse_y_offset + text_height + padding * 2,
+            border_color, 4, 0, 2  -- Border width = 2
+        )
+        
+        -- Draw text
+        local text_color = ImGui.GetColorU32(0.8, 0.9, 1, 1)  -- Light blue text
+        ImGui.ImDrawListAddText(drawList, mouse_x + padding, mouse_y + mouse_y_offset + padding, text_color, displayName)
+    end
 end
 
 ---@return void
@@ -446,6 +544,9 @@ local function drawUI()
             end
             ImGui.EndTabBar()
         end
+
+        drawDragVisuals()
+
         ImGui.End()
     end
 end
