@@ -117,10 +117,6 @@ local function lockWindowLoop()
             local curPosX, curPosY = ImGui.GetWindowPos()
             local curSizeX, curSizeY = ImGui.GetWindowSize()
 
-            if name == "Window Manager" then
-                print(name, "curPosX: ", curPosX, "curPosY: ", curPosY, "curSizeX: ", curSizeX, "curSizeY: ", curSizeY)
-            end
-
             local isMoved = not (state.lastPos[1] == curPosX and state.lastPos[2] == curPosY) or not state.lastPos[1] == curPosX or not state.lastPos[2] == curPosY
             if isMoved then
                 ImGui.SetWindowPos(state.lastPos[1], state.lastPos[2])
