@@ -12,8 +12,45 @@ local cachedFilteredRegular = {}
 local cachedSearchQuery = ""
 local cacheInvalid = true
 
+local widestSettingsLabel = nil
+
+local function calculateButtonWidth(isOmitted)
+    if CETWM.settingsInst.settings.allow_window_resizing then
+        local availWidth = ImGui.GetContentRegionAvail()
+        local padding = ImGui.GetStyle().FramePadding.x * 2
+        local itemSpacing = ImGui.GetStyle().ItemSpacing.x
+        local iconGlphyWidth, _ = ImGui.CalcTextSize(IconGlyphs.Star)
+        if not isOmitted then
+            return math.max(0, availWidth - padding - (itemSpacing * 3) - (iconGlphyWidth * 2))
+        else
+            return math.max(0, availWidth)
+        end
+    else
+        return utils.longestStringLenghtPX(CETWM.windows, true)
+    end
+end
+
 ---@return void
 local function modSettingsTab()
+    if not widestSettingsLabel then
+        widestSettingsLabel = math.max(
+            ImGui.CalcTextSize(CETWM.localizationInst.localization_strings.allowWindowResizing),
+            ImGui.CalcTextSize(CETWM.localizationInst.localization_strings.hideScrollbar)
+        )
+    end
+
+    ImGui.Text(CETWM.localizationInst.localization_strings.hideScrollbar)
+    ImGui.SameLine()
+    ImGui.SetCursorPosX(widestSettingsLabel + 30)
+    CETWM.settingsInst.settings.hide_scrollbar = ImGui.Checkbox("##hideScrollbar", CETWM.settingsInst.settings.hide_scrollbar)
+
+    ImGui.Text(CETWM.localizationInst.localization_strings.allowWindowResizing)
+    ImGui.SameLine()
+    ImGui.SetCursorPosX(widestSettingsLabel + 30)
+    CETWM.settingsInst.settings.allow_window_resizing = ImGui.Checkbox("##allowWindowResizing", CETWM.settingsInst.settings.allow_window_resizing)
+    
+    ImGui.Separator()
+
     if ImGui.Button(CETWM.localizationInst.localization_strings.loadWindows) then
         windowManager.loadWindowsFromFile();
     end
@@ -26,6 +63,7 @@ local function modSettingsTab()
                 end
                 windowManager.requestSwitchWindowName(CETWM.localizationInst.localization_strings.modName)
                 CETWM.requestedLanguageSwitch = language
+                widestSettingsLabel = nil
                 ::continue::
             end
         end
@@ -37,10 +75,10 @@ local function modSettingsTab()
     ImGui.Text(CETWM.localizationInst.localization_strings.by .. ": sprt_")
 end
 
-
 ---@return void
 local function drawUnomittedWindows()
-    CETWM.minWidth = utils.longestStringLenghtPX(CETWM.windows, false)
+    CETWM.minWidth = calculateButtonWidth(false)
+
     local sortedWindows = utils.sortTable(CETWM.windows)
 
     -- Separate non-omitted windows into favorites and regular
@@ -370,12 +408,11 @@ local function drawUnomittedWindows()
         dragging_index = nil
         dragging_section = nil
     end
-
 end
 
 ---@return void
 local function drawOmittedWindows()
-    CETWM.minWidth = utils.longestStringLenghtPX(CETWM.windows, true)
+    CETWM.minWidth = calculateButtonWidth(true)
     local sortedWindows = utils.sortTableByName(CETWM.windows)
 
     local onlyOmitedWindows = {}
@@ -419,7 +456,11 @@ end
 
 ---@return void
 local function drawUI()
-    local WMFlags = bit32.bor(ImGuiWindowFlags.AlwaysAutoResize, ImGuiWindowFlags.NoScrollbar)
+
+    local WMFlags = bit32.bor(
+        CETWM.settingsInst.settings.allow_window_resizing and 0 or ImGuiWindowFlags.AlwaysAutoResize,
+        CETWM.settingsInst.settings.hide_scrollbar and ImGuiWindowFlags.NoScrollbar or 0
+        )
     if ImGui.Begin(CETWM.localizationInst.localization_strings.modName, true, WMFlags) then
         if (CETWM.deferredSetSelfPos[1] or CETWM.deferredSetSelfPos[2]) then
             ImGui.SetWindowPos(CETWM.deferredSetSelfPos[1], CETWM.deferredSetSelfPos[2])

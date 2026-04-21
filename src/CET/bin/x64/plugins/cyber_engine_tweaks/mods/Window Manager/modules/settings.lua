@@ -59,7 +59,7 @@ local function init(self)
     local savedSettings = loadSettings()
     if not savedSettings then
         self.windows = {}
-        self.settings = {localization = "en-us"}
+        self.settings = {localization = "en-us", hide_disclaimer = false, allow_window_resizing = false, hide_scrollbar = true}
         return
     end
     if savedSettings.windows then
@@ -71,9 +71,22 @@ local function init(self)
         if savedSettings.settings.localization == nil then
             savedSettings.settings.localization = "en-us"
         end
+
+        if savedSettings.settings.hide_disclaimer == nil then
+            savedSettings.settings.hide_disclaimer = false
+        end
+
+        if savedSettings.settings.allow_window_resizing == nil then
+            savedSettings.settings.allow_window_resizing = false
+        end
+
+        if savedSettings.settings.hide_scrollbar == nil then
+            savedSettings.settings.hide_scrollbar = true
+        end
+
         self.settings = savedSettings.settings
     else
-        self.settings = {localization = "en-us"}
+        self.settings = {localization = "en-us", hide_disclaimer = false, allow_window_resizing = false, hide_scrollbar = true}
     end
 end
 

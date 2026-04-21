@@ -23,5 +23,7 @@ return {
     sortZA = "Z-A",
     favorites = "Favorite Windows",
     windows = "Regular Windows",
+    hideScrollbar = "Hide Scrollbar",
+    allowWindowResizing = "Allow Window Resizing",
 }
 
