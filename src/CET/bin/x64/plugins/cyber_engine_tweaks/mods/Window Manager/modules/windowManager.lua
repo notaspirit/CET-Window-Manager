@@ -64,9 +64,6 @@ end
 ---@param name string
 ---@return void
 local function toggleFavorite(name)
-    if name == CETWM.localizationInst.localization_strings.modName then
-        return
-    end
     CETWM.windows[name].favorite = not CETWM.windows[name].favorite
     CETWM.settingsInst:update(CETWM.windows, "windows")
 end
@@ -291,7 +288,7 @@ end
 local function toggleAllFavorites(windows, currentState, targetState)
     windows = windows or CETWM.windows
     for _, window in ipairs(windows) do
-        if not window.state.disabled and window.name ~= CETWM.localizationInst.localization_strings.modName and window.state.favorite == currentState then
+        if not window.state.disabled and window.state.favorite == currentState then
             window.state.favorite = targetState
         end
     end

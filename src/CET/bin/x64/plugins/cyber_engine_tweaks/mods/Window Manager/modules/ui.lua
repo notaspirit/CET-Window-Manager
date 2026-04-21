@@ -359,7 +359,9 @@ local function drawUnomittedWindows()
 
     -- Draw Regular Windows Section
     ImGui.BeginGroup()
-    ImGui.Button(CETWM.localizationInst.localization_strings.windows .. "##windows", fullWidthButton, 0)
+    if utils.tableLength(cachedFilteredFavorites) > 0 then
+        ImGui.Button(CETWM.localizationInst.localization_strings.windows .. "##windows", fullWidthButton, 0)
+    end
     ImGui.EndGroup()
     drawWindowsSection(cachedFilteredRegular, false)
 
