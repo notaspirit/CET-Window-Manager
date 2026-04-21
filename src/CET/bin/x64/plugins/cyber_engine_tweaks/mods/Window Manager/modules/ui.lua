@@ -411,63 +411,115 @@ local function drawDragVisuals()
         return
     end
 
-    -- Get draw list and mouse position
     local drawList = ImGui.GetForegroundDrawList()
     local mouse_x, mouse_y = ImGui.GetMousePos()
-    local mouse_y_offset = 20  -- Offset below cursor
+    local mouse_y_offset = 10
 
     -- Draw blue drop indicator line
     if drag_drop_line_y then
-        -- Get the content region bounds to draw line across the list width
         local content_min_x, content_min_y = ImGui.GetWindowContentRegionMin()
         local content_max_x, content_max_y = ImGui.GetWindowContentRegionMax()
         local win_x, win_y = ImGui.GetWindowPos()
-        
-        -- Calculate actual screen coordinates for the line
         local line_x1 = win_x + content_min_x
         local line_x2 = win_x + content_max_x
-        
-        -- Draw a blue line
-        local blue = ImGui.GetColorU32(0, 0.5, 1, 1)  -- Bright blue
+        local blue = ImGui.GetColorU32(0, 0.5, 1, 1)
         ImGui.ImDrawListAddLine(drawList, line_x1, drag_drop_line_y - (ImGui.GetStyle().ItemSpacing.y / 2), line_x2, drag_drop_line_y - (ImGui.GetStyle().ItemSpacing.y / 2), blue, 2)
     end
 
     -- Draw dragged item representation following cursor
     if drag_item_name then
+        -- Find the window state for the dragged item
+        local window = CETWM.windows[drag_item_name]
+        if not window then return end
+        local state = window.state or window
+
+        local isFavorite = state.favorite or false
+        local isLocked = state.locked or false
+        local isVisible = state.visible or false
+
         local displayName = utils.getWindowDisplayName(drag_item_name)
-        local text_width, text_height = ImGui.CalcTextSize(displayName)
-        
-        -- Ensure we have numeric values (fallback to reasonable defaults)
-        if type(text_width) ~= "number" then
-            text_width = 150
+
+        -- Style colors (mirrors styles.lua values)
+        local r_en, g_en, b_en = 0.22, 0.48, 0.8
+        local r_dis, g_dis, b_dis = 0.2, 0.2, 0.2
+        local alpha = 0.85
+
+        local col_enabled  = ImGui.GetColorU32(r_en,  g_en,  b_en,  alpha)
+        local col_disabled = ImGui.GetColorU32(r_dis, g_dis, b_dis, alpha)
+        local col_border   = ImGui.GetColorU32(0.26, 0.26, 0.29, 0.9)
+        local col_text     = ImGui.GetColorU32(1.0, 1.0, 1.0, 1.0)
+
+        local padding   = ImGui.GetStyle().FramePadding
+        local spacing   = ImGui.GetStyle().ItemSpacing
+        local pad_x     = padding.x
+        local pad_y     = padding.y
+        local rounding  = ImGui.GetStyle().FrameRounding
+
+        -- Measure glyphs and name text
+        local fav_icon  = isFavorite and IconGlyphs.Star or IconGlyphs.StarOutline
+        local lock_icon = isLocked   and IconGlyphs.Lock or IconGlyphs.LockOpenVariant
+
+        local fav_w,  fav_h  = ImGui.CalcTextSize(fav_icon)
+        local lock_w, lock_h = ImGui.CalcTextSize(lock_icon)
+        local name_w, name_h = ImGui.CalcTextSize(displayName)
+
+        -- Fallback if CalcTextSize returns non-numbers
+        fav_w  = type(fav_w)  == "number" and fav_w  or 16
+        lock_w = type(lock_w) == "number" and lock_w or 16
+        name_w = type(name_w) == "number" and name_w or 100
+        local text_h = type(fav_h) == "number" and fav_h or 16
+
+        -- Button dimensions (text + horizontal padding on each side)
+        local btn_h      = text_h + pad_y * 2
+        local fav_btn_w  = fav_w  + pad_x * 2
+        local lock_btn_w = lock_w + pad_x * 2
+        local name_btn_w = CETWM.minWidth  -- match the list width
+
+        -- Total row dimensions
+        local total_w = fav_btn_w + spacing.x + lock_btn_w + spacing.x + name_btn_w
+        local total_h = btn_h
+
+        -- Top-left origin of the ghost row
+        local ox = mouse_x + 8
+        local oy = mouse_y + mouse_y_offset
+
+        -- Helper: draw one button rect + text, returns next x
+        local function drawBtn(x, y, w, h, bgColor, icon, r)
+            ImGui.ImDrawListAddRectFilled(drawList, x, y, x + w, y + h, bgColor, r)
+            local tw, th = ImGui.CalcTextSize(icon)
+            tw = type(tw) == "number" and tw or 16
+            th = type(th) == "number" and th or 16
+            ImGui.ImDrawListAddText(drawList, x + (w - tw) * 0.5, y + (h - th) * 0.5, col_text, icon)
+            return x + w + spacing.x
         end
-        if type(text_height) ~= "number" then
-            text_height = 20
-        end
-        
-        -- Draw semi-transparent background box
-        local bg_color = ImGui.GetColorU32(0.2, 0.2, 0.2, 0.7)  -- Dark semi-transparent
-        local border_color = ImGui.GetColorU32(0.5, 0.7, 1, 1)  -- Blue border
-        
-        local padding = 5
-        ImGui.ImDrawListAddRectFilled(
-            drawList,
-            mouse_x, mouse_y + mouse_y_offset,
-            mouse_x + text_width + padding * 2, mouse_y + mouse_y_offset + text_height + padding * 2,
-            bg_color, 4  -- 4 = rounding
-        )
-        
-        -- Draw border
-        ImGui.ImDrawListAddRect(
-            drawList,
-            mouse_x, mouse_y + mouse_y_offset,
-            mouse_x + text_width + padding * 2, mouse_y + mouse_y_offset + text_height + padding * 2,
-            border_color, 4, 0, 2  -- Border width = 2
-        )
-        
-        -- Draw text
-        local text_color = ImGui.GetColorU32(0.8, 0.9, 1, 1)  -- Light blue text
-        ImGui.ImDrawListAddText(drawList, mouse_x + padding, mouse_y + mouse_y_offset + padding, text_color, displayName)
+
+        -- Row background
+        local row_pad = 4
+        local col_row_bg = ImGui.GetColorU32(0.0, 0.0, 0.0, 0.92)
+        ImGui.ImDrawListAddRectFilled(drawList,
+            ox - row_pad, oy - row_pad,
+            ox + total_w + row_pad, oy + total_h + row_pad,
+            col_row_bg, rounding)
+        ImGui.ImDrawListAddRect(drawList,
+            ox - row_pad, oy - row_pad,
+            ox + total_w + row_pad, oy + total_h + row_pad,
+            col_border, rounding, 0, 1)
+
+        -- Draw favourite button
+        local cur_x = ox
+        cur_x = drawBtn(cur_x, oy, fav_btn_w, btn_h,
+            isFavorite and col_enabled or col_disabled,
+            fav_icon, rounding)
+
+        -- Draw lock button
+        cur_x = drawBtn(cur_x, oy, lock_btn_w, btn_h,
+            isLocked and col_enabled or col_disabled,
+            lock_icon, rounding)
+
+        -- Draw name/visibility button (uses minWidth like the real list)
+        drawBtn(cur_x, oy, name_btn_w, btn_h,
+            isVisible and col_enabled or col_disabled,
+            displayName, rounding)
     end
 end
 
