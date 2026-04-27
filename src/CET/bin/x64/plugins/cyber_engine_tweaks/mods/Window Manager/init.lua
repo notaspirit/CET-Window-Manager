@@ -112,6 +112,7 @@ registerForEvent("onDraw", function()
         framesToWaitBeforeLoading = framesToWaitBeforeLoading - 1
         if framesToWaitBeforeLoading == 0 then
             windowManager.loadWindowsFromFile()
+            ui.invalidateCache()
         end
     end
 
