@@ -28,13 +28,13 @@ local function calculateButtonWidth(isOmitted)
             return math.max(0, availWidth)
         end
     else
-        return utils.longestStringLenghtPX(CETWM.windows, true)
+        return utils.longestStringLenghtPX(CETWM.windows, isOmitted)
     end
 end
 
 ---@return void
 local function modSettingsTab()
-    if not widestSettingsLabel then
+    if not widestSettingsLabel or cacheInvalid then
         widestSettingsLabel = math.max(
             ImGui.CalcTextSize(CETWM.localizationInst.localization_strings.allowWindowResizing),
             ImGui.CalcTextSize(CETWM.localizationInst.localization_strings.hideScrollbar)
@@ -54,7 +54,8 @@ local function modSettingsTab()
     ImGui.Separator()
 
     if ImGui.Button(CETWM.localizationInst.localization_strings.loadWindows) then
-        windowManager.loadWindowsFromFile();
+        windowManager.loadWindowsFromFile()
+        cacheInvalid = true
     end
 
     if ImGui.BeginMenu(CETWM.localizationInst.localization_strings.localization) then
@@ -653,7 +654,13 @@ local function drawFailedInitUI()
     end
 end
 
+---@return void 
+local function invalidateCache()
+    cacheInvalid = true
+end
+
 return {
     drawUI = drawUI,
     drawFailedInitUI = drawFailedInitUI,
+    invalidateCache = invalidateCache
 }
