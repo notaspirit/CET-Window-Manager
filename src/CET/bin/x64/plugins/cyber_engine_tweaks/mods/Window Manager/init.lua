@@ -56,7 +56,7 @@ local framesToWaitBeforeLoading = 5
 local function initWindowManagerWindows()
     if CETWM.windows[localizationInst.localization_strings.modName] == nil then
         local newIndex = utils.tableLength(CETWM.windows) + 1
-        CETWM.windows[localizationInst.localization_strings.modName] = {visible = true, lastPos = {x = 100, y = 100}, isCollapsed = false, index = newIndex, locked = false, lastSize = {1,1}, favorite = false, favoritesIndex = 0}
+        CETWM.windows[localizationInst.localization_strings.modName] = {visible = true, lastPos = {100, 100}, isCollapsed = false, index = newIndex, locked = false, lastSize = {1,1}, favorite = false, favoritesIndex = 0}
         settingsInst:update(CETWM.windows, "windows")
     end
     

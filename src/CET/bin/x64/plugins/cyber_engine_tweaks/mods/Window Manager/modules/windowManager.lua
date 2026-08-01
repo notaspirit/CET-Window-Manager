@@ -227,7 +227,7 @@ local function loadWindowsFromFile()
 
         CETWM.windows[name] = {
             visible = true,
-            lastPos = {x = tonumber(posX), y = tonumber(posY)},
+            lastPos = {tonumber(posX), tonumber(posY)},
             isCollapsed = (collapsed == "1"),
             index = 1,
             locked = false,
