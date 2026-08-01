@@ -25,5 +25,6 @@ return {
     windows = "Regular Windows",
     hideScrollbar = "Hide Scrollbar",
     allowWindowResizing = "Allow Window Resizing",
+    toggleAll = "Toggle All",
 }
 

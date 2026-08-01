@@ -245,7 +245,7 @@ local function drawUnomittedWindows()
             styles.button_styled_dark()
         end
         
-        local toggleLabel = isFavorite and "Toggle All##toggleAllVisibilityFavorites" or "Toggle All##toggleAllVisibility"
+        local toggleLabel = isFavorite and CETWM.localizationInst.localization_strings.toggleAll .. "##toggleAllVisibilityFavorites" or CETWM.localizationInst.localization_strings.toggleAll .. "##toggleAllVisibility"
         if ImGui.Button(toggleLabel, CETWM.minWidth, 0) then
             windowManager.toggleAllVisibility(sectionWindows, not allVisible)
         end
